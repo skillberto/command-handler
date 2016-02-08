@@ -1,6 +1,6 @@
 <?php
 
-namespace Skillberto\CommandHandler\Test;
+namespace Skillberto\CommandHandler\Tests;
 
 class CommandHandlerTest extends \PHPUnit_Framework_TestCase
 {
