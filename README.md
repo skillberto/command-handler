@@ -1,4 +1,7 @@
 # Command Handler
+[![Build Status](https://travis-ci.org/skillberto/commandhandler.svg?branch=master)](https://travis-ci.org/skillberto/commandhandler)
+
+## Install
 
 Install from composer:
 ```
