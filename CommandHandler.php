@@ -105,6 +105,10 @@ class CommandHandler
 
     public function getSkippedMessages()
     {
+        if (! $this->hasSkipped()) {
+            return;
+        }
+
         foreach ($this->skipped as $command) {
             $this->info($command, 'Skipped');
         }
@@ -115,6 +119,10 @@ class CommandHandler
      */
     public function getErrorMessage()
     {
+        if (! $this->hasError()) {
+            return;
+        }
+
         $this->info($this->error, 'Error');
     }
 
