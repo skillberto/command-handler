@@ -2,7 +2,7 @@
 
 Install from composer:
 ```
-    $ composer require skillberto/command-handler "~1.0"
+$ composer require skillberto/command-handler "~1.0"
 ```
 
 ## Authors and contributors
@@ -11,40 +11,45 @@ Install from composer:
 ## Usage
 
 The following example show you how you can us it:
+```
+use \Symfony\Component\Console\Output\ConsoleOutput;
+use \Skillberto\CommandHandler\CommandHandler;
 
-    use \Symfony\Component\Console\Output\ConsoleOutput;
-    use \Skillberto\CommandHandler\CommandHandler;
+$output = new ConsoleOutput();
+$handler = new CommandHandler($output);
+$handler->addCommand( 'some kind of command' );
 
-    $output = new ConsoleOutput();
-    $handler = new CommandHandler($output);
-    $handler->addCommand( 'some kind of command' );
-    ...
-    or add more commands
-    ...
-    $handler->addCommands( array( 'some kind of commands' ) );
+...
+or add more commands
+...
 
-    $handler->execute();
+$handler->addCommands( array( 'some kind of commands' ) );
 
+$handler->execute();
+```
 If you want to skip a command if it's not successful (and not needed):
-    $handler->addSkippableCommand('some kind of command');
-    ...
-    or add more commands
-    ...
-    $handler->addSkippableCommands( array( 'some kind of commands' ) );
+```
+$handler->addSkippableCommand('some kind of command');
 
-    $handler->execute();
+...
+or add more commands
 
-    ...
-    after that you can get these commands:
+...
+$handler->addSkippableCommands( array( 'some kind of commands' ) );
 
-    if ($handler->hasSkipped()) {
-        $handler->getSkippedMessages();
-    }
-
+$handler->execute();
+```
+...after that you can get these commands:
+```
+if ($handler->hasSkipped()) {
+    $handler->getSkippedMessages();
+}
+```
 But, if you don't skip a command, and it's not successful:
+```
+$handler->execute();
 
-    $handler->execute();
-
-    if ($handler->hasError()) {
-        $handler->getErrorMessage();
-    }
+if ($handler->hasError()) {
+    $handler->getErrorMessage();
+}
+```
