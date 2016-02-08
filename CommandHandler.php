@@ -4,6 +4,7 @@ namespace Skillberto\CommandHandler;
 
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Process\PhpProcess;
+use Symfony\Component\Process\Process;
 
 class CommandHandler
 {
@@ -15,12 +16,16 @@ class CommandHandler
 
     protected $output;
 
+    protected $php;
+
     /**
      * @param OutputInterface $outputInterface
      */
-    public function __construct(OutputInterface $outputInterface)
+    public function __construct(OutputInterface $outputInterface, $php = true)
     {
         $this->output = $outputInterface;
+
+        $this->php = $php;
     }
 
     /**
@@ -137,6 +142,10 @@ class CommandHandler
      */
     protected function createProcess($commandString)
     {
-        return new PhpProcess($commandString);
+        if ($this->php) {
+            return new PhpProcess($commandString);
+        } else {
+            return new Process($commandString);
+        }
     }
 }

@@ -17,7 +17,7 @@
     "phpunit/phpunit": "~4"
   },
   "autoload": {
-    "psr-4": { "Skillberto\\CommandHandler": "" }
+    "psr-4": { "Skillberto\\CommandHandler\\": "" }
   },
   "minimum-stability": "dev"
 }
