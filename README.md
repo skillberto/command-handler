@@ -1,7 +1,9 @@
 # Command Handler
 
 Install from composer:
+```
     $ composer require skillberto/command-handler "~1.0"
+```
 
 ## Authors and contributors
 * [Norbert Heiszler](heiszler.norbert@gmail.com) (Creator, developer)
