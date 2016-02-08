@@ -1,0 +1,23 @@
+{
+  "name": "skillberto/command-handler",
+  "license": "MIT",
+  "type": "",
+  "description": "Command handler for Symfony commands",
+  "authors": [
+    {
+      "name": "Norbert Heiszler",
+      "email": "heiszler.norbert@gmail.com"
+    }
+  ],
+  "require": {
+    "symfony/console": "~2.3|~3.0",
+    "symfony/process": "~2.3|~3.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "~4"
+  },
+  "autoload": {
+    "psr-4": { "Skillberto\\CommandHandler": "" }
+  },
+  "minimum-stability": "dev"
+}
