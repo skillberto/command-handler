@@ -16,23 +16,28 @@ class CommandHandler
 
     protected $output;
 
-    protected $php;
+    protected $timeout;
 
     /**
      * @param OutputInterface $outputInterface
      */
-    public function __construct(OutputInterface $outputInterface, $php = true)
+    public function __construct(OutputInterface $outputInterface)
     {
         $this->output = $outputInterface;
+    }
 
-        $this->php = $php;
+    public function setTimeout($timeout = null)
+    {
+        $this->timeout = $timeout;
+
+        return $this;
     }
 
     /**
      * @param $commandString
      * @return $this
      */
-    public function add($commandString)
+    public function addCommand($commandString)
     {
         $command = $this->createCommand()->add($commandString);
 
@@ -42,10 +47,23 @@ class CommandHandler
     }
 
     /**
+     * @param  array $commandStrings
+     * @return $this
+     */
+    public function addCommands(array $commandStrings)
+    {
+        foreach ($commandStrings as $commandString) {
+            $this->addCommand($commandString);
+        }
+
+        return $this;
+    }
+
+    /**
      * @param  string $commandString
      * @return $this
      */
-    public function addSkippable($commandString)
+    public function addSkippableCommand($commandString)
     {
         $command = $this->createCommand()->add($commandString)->skippable();
 
@@ -55,20 +73,37 @@ class CommandHandler
     }
 
     /**
+     * @param  array $commandStrings
      * @return $this
      */
-    public function execute()
+    public function addSkippableCommands(array $commandStrings)
     {
-        $output = $this->output;
+        foreach ($commandStrings as $commandString) {
+            $this->addSkippableCommand($commandString);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    public function execute($callback = null)
+    {
+        $that = $this;
 
         foreach ($this->commands as $command) {
 
             $this->info($command, 'Executing');
 
             $p = $this->createProcess($command->get());
-            $p->setTimeout(null);
-            $p->run(function($type, $data) use ($output) {
-                $output->write($data, false, OutputInterface::OUTPUT_RAW);
+            $p->setTimeout($this->timeout ?: $command->getTimeout());
+            $p->run(function($type, $data) use ($that, $callback) {
+                $that->output->write($data, false, OutputInterface::OUTPUT_RAW);
+
+                if ($callback) {
+                    call_user_func($callback, $that);
+                }
             });
 
             if (!$p->isSuccessful()){
@@ -126,6 +161,11 @@ class CommandHandler
         $this->info($this->error, 'Error');
     }
 
+    public function getOutput()
+    {
+        return $this->output;
+    }
+
     /**
      * @param Command $command
      * @param string  $info
@@ -150,10 +190,6 @@ class CommandHandler
      */
     protected function createProcess($commandString)
     {
-        if ($this->php) {
-            return new PhpProcess($commandString);
-        } else {
-            return new Process($commandString);
-        }
+        return new Process($commandString, null, null, fopen('php://stdin', 'r'));
     }
 }

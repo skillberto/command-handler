@@ -6,6 +6,8 @@ class Command
 {
     protected $command = "";
 
+    protected $timeout = null;
+
     protected $skip = false;
 
     public function add($command)
@@ -30,5 +32,17 @@ class Command
     public function get()
     {
         return $this->command;
+    }
+
+    public function setTimeout($timeout = null)
+    {
+        $this->timeout = $timeout;
+
+        return $this;
+    }
+
+    public function getTimeout()
+    {
+        return $this->timeout;
     }
 }
