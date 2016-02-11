@@ -214,7 +214,7 @@ class CommandHandler
         $p->run(function($type, $data) use ($that, $callback, $p, $command) {
             $that->output->write($data, false, OutputInterface::OUTPUT_RAW);
 
-            if ($callback) {
+            if ($callback !== null) {
                 call_user_func_array($callback, array($p, $command));
             }
         });
@@ -228,8 +228,6 @@ class CommandHandler
                 $this->skipped[] = $command;
             }
         }
-
-        $this->output->writeln("");
 
         return true;
     }
@@ -258,6 +256,6 @@ class CommandHandler
      */
     protected function createProcess($commandString)
     {
-        return new Process($commandString, null, null, fopen('php://stdin', 'r'));
+        return new Process($commandString);
     }
 }
