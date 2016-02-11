@@ -5,7 +5,7 @@
 
 Install from composer:
 ```
-$ composer require skillberto/command-handler "~1.0"
+$ composer require skillberto/command-handler "dev-master"
 ```
 
 ## Authors and contributors
