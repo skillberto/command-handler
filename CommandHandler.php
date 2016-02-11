@@ -142,10 +142,10 @@ class CommandHandler
     }
 
     /**
-     * @param  \Closure $callback Current Process and Command are injected
+     * @param  callback|null $callback Current Process and Command are injected
      * @return $this
      */
-    public function execute(\Closure $callback = null)
+    public function execute($callback = null)
     {
         foreach ($this->commands as $command) {
             if (! $this->iterateCommands($command, $callback)) {
@@ -203,7 +203,7 @@ class CommandHandler
         return $this->output;
     }
 
-    protected function iterateCommands(Command $command, \Closure $callback = null)
+    protected function iterateCommands(Command $command, $callback = null)
     {
         $that = $this;
 

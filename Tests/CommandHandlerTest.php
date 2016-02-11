@@ -65,8 +65,8 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
         $that = $this;
 
         $this->commandHandler
-            ->addCommand(new Command($this->correctCommand2, false, 0.2))
-            ->setTimeout(0.1)
+            ->addCommand(new Command($this->correctCommand2, false, 0.3))
+            ->setTimeout(0.2)
             ->execute(function(Process $process, Command $command) use ($that) {
                 if ($that->correctCommand2 == $command->get()) {
                     $that->assertEquals($process->getTimeout(), $command->getTimeout());
