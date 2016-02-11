@@ -2,9 +2,9 @@
 
 namespace Skillberto\CommandHandler\Tests;
 
+use Skillberto\CommandHandler\Command;
 use Skillberto\CommandHandler\CommandHandler;
-use Symfony\Component\Console\Output\BufferedOutput;
-use Symfony\Component\Console\Output\ConsoleOutput;
+use Symfony\Component\Process\Process;
 
 class CommandHandlerTest extends \PHPUnit_Framework_TestCase
 {
@@ -14,6 +14,8 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
     protected $commandHandler;
 
     protected $correctCommand = "php ./Tests/test.php";
+
+    protected $correctCommand2 = "php ./Tests/test2.php";
 
     protected $correctOutput = "Executing: php ./Tests/test.php\nfoo";
 
@@ -27,8 +29,8 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
 
         $this->commandHandler = new CommandHandler($output);
         $this->commandHandler
-            ->addCommand($this->correctCommand)
-            ->addCommands(array($this->correctCommand));
+            ->addCommandString($this->correctCommand)
+            ->addCommandStrings(array($this->correctCommand));
     }
 
     public function testWithoutSkip()
@@ -46,8 +48,8 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
     public function testWithoutSkipAsSkippable()
     {
         $this->commandHandler
-            ->addSkippableCommand($this->correctCommand)
-            ->addSkippableCommands(array($this->correctCommand))
+            ->addSkippableCommandString($this->correctCommand)
+            ->addSkippableCommandStrings(array($this->correctCommand))
             ->execute();
 
         $this->commandHandler->getSkippedMessages();
@@ -56,6 +58,22 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
             $this->formatOutput($this->correctOutput . $this->correctOutput . $this->correctOutput. $this->correctOutput),
             $this->formatOutput($this->commandHandler->getOutput()->fetch())
         );
+    }
+
+    public function testTimeoutAndCallableExecute()
+    {
+        $that = $this;
+
+        $this->commandHandler
+            ->addCommand(new Command($this->correctCommand2, false, 0.2))
+            ->setTimeout(0.1)
+            ->execute(function(Process $process, Command $command) use ($that) {
+                if ($that->correctCommand2 == $command->get()) {
+                    $that->assertEquals($process->getTimeout(), $command->getTimeout());
+                } else {
+                    $that->assertEquals($process->getTimeout(), $that->commandHandler->getTimeout());
+                }
+            });
     }
 
     public function testWithSkip()

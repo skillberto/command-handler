@@ -14,7 +14,7 @@ class CommandTest extends \PHPUnit_Framework_TestCase
     protected function setUp()
     {
         $this->command = new Command();
-        $this->command->add('asd');
+        $this->command->set('asd');
     }
 
     public function testCommand()
@@ -34,5 +34,13 @@ class CommandTest extends \PHPUnit_Framework_TestCase
 
         $this->assertEquals('asd', $this->command->get());
         $this->assertFalse($this->command->isSkippable());
+    }
+
+    public function testTimeout()
+    {
+        $this->command->setTimeout(0.1);
+
+        $this->assertEquals(0.1, $this->command->getTimeout());
+        $this->assertEquals('asd', $this->command->get());
     }
 }

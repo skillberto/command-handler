@@ -18,14 +18,22 @@ class CommandHandler
 
     protected $timeout;
 
+    protected $prefix;
+
     /**
      * @param OutputInterface $outputInterface
+     * @param string          $prefix
      */
-    public function __construct(OutputInterface $outputInterface)
+    public function __construct(OutputInterface $outputInterface, $prefix = "")
     {
         $this->output = $outputInterface;
+        $this->prefix = $prefix;
     }
 
+    /**
+     * @param  float|null $timeout
+     * @return $this
+     */
     public function setTimeout($timeout = null)
     {
         $this->timeout = $timeout;
@@ -34,14 +42,60 @@ class CommandHandler
     }
 
     /**
-     * @param $commandString
+     * @return float
+     */
+    public function getTimeout()
+    {
+        return $this->timeout;
+    }
+
+    /**
+     * @param  Command $command
      * @return $this
      */
-    public function addCommand($commandString)
+    public function addCommand(Command $command)
     {
-        $command = $this->createCommand()->add($commandString);
+        if ($this->prefix) {
+            $data = $this->prefix." ".$command->get();
 
-        $this->commands[] = $command;
+            $newCommand = $this->createCommand($data, $command->isSkippable(), $command->getTimeout());
+        }
+
+        $this->commands[] = $newCommand;
+
+        return $this;
+    }
+
+    /**
+     * @param  array $commands
+     * @return $this
+     */
+    public function addCommands(array $commands)
+    {
+        foreach ($commands as $command) {
+            $this->addCommand($command);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getCommands()
+    {
+        return $this->commands;
+    }
+
+    /**
+     * @param  string $commandString
+     * @return $this
+     */
+    public function addCommandString($commandString)
+    {
+        $command = $this->createCommand($commandString);
+
+        $this->addCommand($command);
 
         return $this;
     }
@@ -50,10 +104,10 @@ class CommandHandler
      * @param  array $commandStrings
      * @return $this
      */
-    public function addCommands(array $commandStrings)
+    public function addCommandStrings(array $commandStrings)
     {
         foreach ($commandStrings as $commandString) {
-            $this->addCommand($commandString);
+            $this->addCommandString($commandString);
         }
 
         return $this;
@@ -63,11 +117,11 @@ class CommandHandler
      * @param  string $commandString
      * @return $this
      */
-    public function addSkippableCommand($commandString)
+    public function addSkippableCommandString($commandString)
     {
-        $command = $this->createCommand()->add($commandString)->skippable();
+        $command = $this->createCommand($commandString, true);
 
-        $this->commands[] = $command;
+        $this->addCommand($command);
 
         return $this;
     }
@@ -76,19 +130,20 @@ class CommandHandler
      * @param  array $commandStrings
      * @return $this
      */
-    public function addSkippableCommands(array $commandStrings)
+    public function addSkippableCommandStrings(array $commandStrings)
     {
         foreach ($commandStrings as $commandString) {
-            $this->addSkippableCommand($commandString);
+            $this->addSkippableCommandString($commandString);
         }
 
         return $this;
     }
 
     /**
+     * @param  \Closure $callback Current Process and Command are injected
      * @return $this
      */
-    public function execute($callback = null)
+    public function execute(\Closure $callback = null)
     {
         $that = $this;
 
@@ -97,12 +152,12 @@ class CommandHandler
             $this->info($command, 'Executing');
 
             $p = $this->createProcess($command->get());
-            $p->setTimeout($this->timeout ?: $command->getTimeout());
-            $p->run(function($type, $data) use ($that, $callback) {
+            $p->setTimeout($command->getTimeout() ?: $this->getTimeout());
+            $p->run(function($type, $data) use ($that, $callback, $p, $command) {
                 $that->output->write($data, false, OutputInterface::OUTPUT_RAW);
 
                 if ($callback) {
-                    call_user_func($callback, $that);
+                    call_user_func_array($callback, array($p, $command));
                 }
             });
 
@@ -161,6 +216,9 @@ class CommandHandler
         $this->info($this->error, 'Error');
     }
 
+    /**
+     * @return OutputInterface
+     */
     public function getOutput()
     {
         return $this->output;
@@ -178,9 +236,9 @@ class CommandHandler
     /**
      * @return Command
      */
-    protected function createCommand()
+    protected function createCommand($command, $skip = false, $timeout = null)
     {
-        return new Command();
+        return new Command($command, $skip, $timeout);
     }
 
     /**

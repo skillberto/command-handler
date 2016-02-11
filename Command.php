@@ -10,18 +10,11 @@ class Command
 
     protected $skip = false;
 
-    public function add($command)
+    public function __construct($command, $skip = false, $timeout = null)
     {
         $this->command = $command;
-
-        return $this;
-    }
-
-    public function skippable($skip = true)
-    {
-        $this->skip = $skip;
-
-        return $this;
+        $this->skip    = $skip;
+        $this->timeout = $timeout;
     }
 
     public function isSkippable()
@@ -32,13 +25,6 @@ class Command
     public function get()
     {
         return $this->command;
-    }
-
-    public function setTimeout($timeout = null)
-    {
-        $this->timeout = $timeout;
-
-        return $this;
     }
 
     public function getTimeout()
