@@ -140,7 +140,9 @@ class CommandHandler
     /**
      * Merge an other CommandHandler with this.
      * Everything used from the injected handler for that commands.
+     *
      * If prefix does not exist in the injected handler, then can be used optionally the current.
+     *
      * If timeout exists in the command, then use them. If not, but exists in the injected handler, then use them.
      * Otherwise, if the timeout input is true, then use the current timeout, if false, then will be "0.0".
      * In this case, the timeout of the current handler is not relevant

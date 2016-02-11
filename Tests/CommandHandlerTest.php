@@ -116,13 +116,66 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
             ->execute();
 
         $this->assertOutputEquals(
-            $this->correctOutput . $this->correctOutput . $this->correctOutput .$this->correctOutput
+            $this->correctOutput . $this->correctOutput . $this->correctOutput . $this->correctOutput
         );
     }
 
-    public function testAddHandlerWithPrefix()
+    public function testAddHandlerWithLocalPrefix()
     {
+        //inject with prefix and not use the local
+        $handler = $this->createHandler($this->correctCommand_1);
 
+        $command = $this->prepareCommandWithoutPrefix($this->correctCommand_1, $this->prefix);
+
+        $this->commandHandler = $this->createHandler($command, $this->prefix);
+        $this->commandHandler
+            ->addHandler($handler)
+            ->execute();
+
+        $this->assertOutputEquals(
+            $this->correctOutput . $this->correctOutput . $this->correctOutput . $this->correctOutput
+        );
+
+        //inject without prefix and use the local
+        $command = $this->prepareCommandWithoutPrefix($this->correctCommand_1, $this->prefix);
+
+        $handler = $this->createHandler($command);
+
+        $this->commandHandler
+            ->addHandler($handler, true)
+            ->execute();
+
+        $this->assertOutputEquals(
+            $this->correctOutput . $this->correctOutput . $this->correctOutput . $this->correctOutput . $this->correctOutput . $this->correctOutput
+        );
+    }
+
+    public function testAddHandlerOnlyWithLocalTimeout()
+    {
+        $that = $this;
+
+        $handler = $that->createHandler($that->correctCommand_2);
+
+        //not use local
+        $that->commandHandler
+            ->setTimeout(0.2)
+            ->addHandler($handler)
+            ->execute(function(Process $process, Command $command) use ($that){
+                if ($that->correctCommand_2 == $command->get()) {
+                    $that->assertNull($process->getTimeout());
+                } else {
+                    $that->assertEquals($process->getTimeout(), $that->commandHandler->getTimeout());
+                }
+            });
+
+        //use local
+        $that->commandHandler = $that->createHandler($that->correctCommand_1);
+        $that->commandHandler
+            ->setTimeout(0.2)
+            ->addHandler($handler, false, true)
+            ->execute(function(Process $process, Command $command) use ($that){
+                $that->assertEquals($process->getTimeout(), $that->commandHandler->getTimeout());
+            });
     }
 
     /**
@@ -162,7 +215,7 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
         if (substr($command, 0, strlen($prefix)) == $prefix) {
             $command = substr($command, strlen($prefix));
         } else {
-            throw new \InvalidArgumentException(sprintf('%s command is incorrect, %s prefix is not found at the beginning of command.', $correctCommand_1, $prefix));
+            throw new \InvalidArgumentException(sprintf('%s command is incorrect, %s prefix is not found at the beginning of command.', $command, $prefix));
         }
 
         return $command;
