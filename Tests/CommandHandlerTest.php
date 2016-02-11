@@ -29,12 +29,7 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
 
     protected function setUp()
     {
-        $output = new BufferedOutput();
-
-        $this->commandHandler = new CommandHandler($output);
-        $this->commandHandler
-            ->add($this->correctCommand_1)
-            ->addCollection(array($this->correctCommand_1));
+        $this->commandHandler = $this->createHandler($this->correctCommand_1);
     }
 
     public function testCorrectCommandWithoutSkip()
@@ -42,7 +37,7 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
         $this->commandHandler->execute();
 
         $this->assertOutputEquals(
-            $this->correctOutput. $this->correctOutput
+            $this->correctOutput . $this->correctOutput
         );
     }
 
@@ -53,11 +48,8 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
             ->addSkippableCollection(array($this->correctCommand_1))
             ->execute();
 
-        $this->commandHandler->getSkippedMessages();
-        $this->commandHandler->getErrorMessage();
-
         $this->assertOutputEquals(
-            $this->correctOutput . $this->correctOutput . $this->correctOutput. $this->correctOutput
+            $this->correctOutput . $this->correctOutput . $this->correctOutput . $this->correctOutput
         );
     }
 
@@ -83,13 +75,9 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
             ->addSkippable($this->wrongCommand)
             ->execute();
 
-        $this->commandHandler->getSkippedMessages();
-        $this->commandHandler->getErrorMessage();
-
         $this->assertOutputEquals(
-            $this->correctOutput . $this->correctOutput . $this->wrongOutput. $this->skipOutput
+            $this->correctOutput . $this->correctOutput . $this->wrongOutput . $this->skipOutput
         );
-
     }
 
     public function testWrongCommandWithoutSkipAsError()
@@ -98,39 +86,47 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
             ->add($this->wrongCommand)
             ->execute();
 
-        $this->commandHandler->getSkippedMessages();
-        $this->commandHandler->getErrorMessage();
-
         $this->assertOutputEquals(
-            $this->correctOutput . $this->correctOutput . $this->wrongOutput. $this->errorOutput
+            $this->correctOutput . $this->correctOutput . $this->wrongOutput . $this->errorOutput
         );
 
     }
 
     public function testPrefix()
     {
-        $prefix = 'php ';
-        $correctCommand_1 = $this->correctCommand_1;
+        list($prefix, $command) = $this->createPrefixAndCommand("php ");
 
-        if (substr($correctCommand_1, 0, strlen($prefix)) == $prefix) {
-            $correctCommand_1 = substr($correctCommand_1, strlen($prefix));
-        } else {
-            throw new \InvalidArgumentException(sprintf('%s command is incorrect, %s prefix is not found at the beginning.', $correctCommand_1, $prefix));
-        }
+        $this->commandHandler = $this->createHandler($command, $prefix);
 
-        $output = new BufferedOutput();
-
-        $this->commandHandler = new CommandHandler($output, $prefix);
-        $this->commandHandler
-            ->add($correctCommand_1)
-            ->addCollection(array($correctCommand_1))
-            ->execute();
+        $this->commandHandler->execute();
 
         $this->assertOutputEquals(
-            $this->correctOutput. $this->correctOutput
+            $this->correctOutput . $this->correctOutput
         );
     }
 
+    public function testAddHandler()
+    {
+        $handler = $this->createHandler($this->correctCommand_1);
+
+        $this->commandHandler
+            ->addHandler($handler)
+            ->execute();
+
+        $this->assertOutputEquals(
+            $this->correctOutput . $this->correctOutput . $this->correctOutput .$this->correctOutput
+        );
+    }
+
+    public function testAddHandlerWithPrefix()
+    {
+
+    }
+
+    /**
+     * @param  $output
+     * @return string
+     */
     protected function formatOutput($output)
     {
         return preg_replace( "/\r|\n/", "",$output);
@@ -143,9 +139,46 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
      */
     protected function assertOutputEquals($expected)
     {
+        $this->commandHandler->getSkippedMessages();
+        $this->commandHandler->getErrorMessage();
+
         $this->assertEquals(
             $this->formatOutput($expected),
             $this->formatOutput($this->commandHandler->getOutput()->fetch())
         );
+    }
+
+    /**
+     * @param  string $prefix
+     * @return array
+     */
+    protected function createPrefixAndCommand($prefix)
+    {
+        $correctCommand_1 = $this->correctCommand_1;
+
+        if (substr($correctCommand_1, 0, strlen($prefix)) == $prefix) {
+            $correctCommand_1 = substr($correctCommand_1, strlen($prefix));
+        } else {
+            throw new \InvalidArgumentException(sprintf('%s command is incorrect, %s prefix is not found at the beginning of command.', $correctCommand_1, $prefix));
+        }
+
+        return array($prefix, $correctCommand_1);
+    }
+
+    /**
+     * @param  string $command
+     * @param  string $prefix
+     * @return CommandHandler With two command ($command)
+     */
+    protected function createHandler($command, $prefix = "")
+    {
+        $output = new BufferedOutput();
+
+        $commandHandler = new CommandHandler($output, $prefix);
+        $commandHandler
+            ->add($command)
+            ->addCollection(array($command));
+
+        return $commandHandler;
     }
 }
