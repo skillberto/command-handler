@@ -55,6 +55,8 @@ class CommandHandler
      */
     public function addCommand(Command $command)
     {
+        $newCommand = $command;
+
         if ($this->prefix) {
             $data = $this->prefix." ".$command->get();
 
@@ -145,33 +147,10 @@ class CommandHandler
      */
     public function execute(\Closure $callback = null)
     {
-        $that = $this;
-
         foreach ($this->commands as $command) {
-
-            $this->info($command, 'Executing');
-
-            $p = $this->createProcess($command->get());
-            $p->setTimeout($command->getTimeout() ?: $this->getTimeout());
-            $p->run(function($type, $data) use ($that, $callback, $p, $command) {
-                $that->output->write($data, false, OutputInterface::OUTPUT_RAW);
-
-                if ($callback) {
-                    call_user_func_array($callback, array($p, $command));
-                }
-            });
-
-            if (!$p->isSuccessful()){
-                if ($command->isSkippable() === false) {
-                    $this->error = $command;
-
-                    return $this;
-                } else {
-                    $this->skipped[] = $command;
-                }
+            if (! $this->iterateCommands($command, $callback)) {
+                return $this;
             }
-
-            $this->output->writeln("");
         }
 
         return $this;
@@ -222,6 +201,37 @@ class CommandHandler
     public function getOutput()
     {
         return $this->output;
+    }
+
+    protected function iterateCommands(Command $command, \Closure $callback = null)
+    {
+        $that = $this;
+
+        $this->info($command, 'Executing');
+
+        $p = $this->createProcess($command->get());
+        $p->setTimeout($command->getTimeout() ?: $this->getTimeout());
+        $p->run(function($type, $data) use ($that, $callback, $p, $command) {
+            $that->output->write($data, false, OutputInterface::OUTPUT_RAW);
+
+            if ($callback) {
+                call_user_func_array($callback, array($p, $command));
+            }
+        });
+
+        if (!$p->isSuccessful()){
+            if ($command->isSkippable() === false) {
+                $this->error = $command;
+
+                return false;
+            } else {
+                $this->skipped[] = $command;
+            }
+        }
+
+        $this->output->writeln("");
+
+        return true;
     }
 
     /**

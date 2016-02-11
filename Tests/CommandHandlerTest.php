@@ -37,10 +37,10 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
     {
         $that = $this;
 
-        $this->commandHandler->execute(function($commandHandler) use ($that) {
+        $this->commandHandler->execute(function($process, $command) use ($that) {
             $that->assertEquals(
-                $this->formatOutput($this->correctOutput),
-                $this->formatOutput($commandHandler->getOutput()->fetch())
+                $that->formatOutput($that->correctOutput),
+                $that->formatOutput($that->commandHandler->getOutput()->fetch())
             );
         });
     }
