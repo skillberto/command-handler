@@ -16,7 +16,7 @@ class CommandHandler
 
     protected $output;
 
-    protected $timeout;
+    protected $timeout = null;
 
     protected $prefix;
 
@@ -55,13 +55,9 @@ class CommandHandler
      */
     public function addCommand(Command $command)
     {
-        $newCommand = $command;
+        $data = $this->prefix . $command->get();
 
-        if ($this->prefix) {
-            $data = $this->prefix." ".$command->get();
-
-            $newCommand = $this->createCommand($data, $command->isSkippable(), $command->getTimeout());
-        }
+        $newCommand = $this->createCommand($data, $command->isSkippable(), $command->getTimeout());
 
         $this->commands[] = $newCommand;
 
@@ -69,7 +65,7 @@ class CommandHandler
     }
 
     /**
-     * @param  array $commands
+     * @param  array $commands Command collection
      * @return $this
      */
     public function addCommands(array $commands)
@@ -82,7 +78,7 @@ class CommandHandler
     }
 
     /**
-     * @return array
+     * @return array Command collection
      */
     public function getCommands()
     {
@@ -93,7 +89,7 @@ class CommandHandler
      * @param  string $commandString
      * @return $this
      */
-    public function addCommandString($commandString)
+    public function add($commandString)
     {
         $command = $this->createCommand($commandString);
 
@@ -106,10 +102,10 @@ class CommandHandler
      * @param  array $commandStrings
      * @return $this
      */
-    public function addCommandStrings(array $commandStrings)
+    public function addCollection(array $commandStrings)
     {
         foreach ($commandStrings as $commandString) {
-            $this->addCommandString($commandString);
+            $this->add($commandString);
         }
 
         return $this;
@@ -119,7 +115,7 @@ class CommandHandler
      * @param  string $commandString
      * @return $this
      */
-    public function addSkippableCommandString($commandString)
+    public function addSkippable($commandString)
     {
         $command = $this->createCommand($commandString, true);
 
@@ -132,10 +128,39 @@ class CommandHandler
      * @param  array $commandStrings
      * @return $this
      */
-    public function addSkippableCommandStrings(array $commandStrings)
+    public function addSkippableCollection(array $commandStrings)
     {
         foreach ($commandStrings as $commandString) {
-            $this->addSkippableCommandString($commandString);
+            $this->addSkippable($commandString);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Merge an other CommandHandler with this.
+     * Everything used from the injected handler for that commands.
+     * If prefix does not exist in the injected handler, then can be used optionally the current.
+     * If timeout exists in the command, then use them. If not, but exists in the injected handler, then use them.
+     * Otherwise, if the timeout input is true, then use the current timeout, if false, then will be "0.0".
+     * In this case, the timeout of the current handler is not relevant
+     *
+     * @param  CommandHandler $handler  An other CommandHandler instance
+     * @param  bool           $prefix   If true, then use the current prefix if the other doesn't exist, otherwise not.
+     * @param  bool           $timeout  If true, then use the current timeout if the other doesn't exist, otherwise use "0.0".
+     * @return $this
+     */
+    public function addHandler(CommandHandler $handler, $prefix = false, $timeout = false)
+    {
+        foreach ($handler->getCommands() as $command) {
+            $internalPrefix  = ($handler->getPrefix() == "" && $prefix == true) ? $this->getPrefix() : $handler->getPrefix();
+            $internalTimeout = (float) ($command->getTimeout() ?: ($handler->getTimeout() ?: (($handler->getTimeout() === null && $timeout == true) ? $this->getTimeout() : 0.0)));
+
+            $data = $internalPrefix . $command->get();
+
+            $newCommand = $this->createCommand($data, $command->isSkippable(), $internalTimeout);
+
+            $this->commands[] = $newCommand;
         }
 
         return $this;
@@ -203,6 +228,14 @@ class CommandHandler
         return $this->output;
     }
 
+    /**
+     * @return string
+     */
+    public function getPrefix()
+    {
+        return $this->prefix;
+    }
+
     protected function iterateCommands(Command $command, $callback = null)
     {
         $that = $this;
@@ -210,7 +243,7 @@ class CommandHandler
         $this->info($command, 'Executing');
 
         $p = $this->createProcess($command->get());
-        $p->setTimeout($command->getTimeout() ?: $this->getTimeout());
+        $p->setTimeout($command->getTimeout() !== null ? $command->getTimeout() : $this->getTimeout());
         $p->run(function($type, $data) use ($that, $callback, $p, $command) {
             $that->output->write($data, false, OutputInterface::OUTPUT_RAW);
 
