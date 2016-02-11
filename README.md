@@ -20,25 +20,25 @@ use \Skillberto\CommandHandler\CommandHandler;
 
 $output = new ConsoleOutput();
 $handler = new CommandHandler($output);
-$handler->addCommand( 'some kind of command' );
+$handler->add( 'some kind of command' );
 
 ...
 or add more commands
 ...
 
-$handler->addCommands( array( 'some kind of commands' ) );
+$handler->addCollection( array( 'some kind of commands' ) );
 
 $handler->execute();
 ```
 If you want to skip a command if it's not successful (and not needed):
 ```
-$handler->addSkippableCommand('some kind of command');
+$handler->addSkippable('some kind of command');
 
 ...
 or add more commands
 
 ...
-$handler->addSkippableCommands( array( 'some kind of commands' ) );
+$handler->addSkippableCollection( array( 'some kind of commands' ) );
 
 $handler->execute();
 ```
