@@ -246,6 +246,7 @@ class CommandHandler
 
         $p = $this->createProcess($command->get());
         $p->setTimeout($command->getTimeout() !== null ? $command->getTimeout() : $this->getTimeout());
+        $p->setPty(true);
         $p->run(function($type, $data) use ($that, $callback, $p, $command) {
             $that->output->write($data, false, OutputInterface::OUTPUT_RAW);
 
@@ -291,6 +292,6 @@ class CommandHandler
      */
     protected function createProcess($commandString)
     {
-        return new Process($commandString);
+        return new Process($commandString, null, null, fopen('php://stdin', 'r'));
     }
 }

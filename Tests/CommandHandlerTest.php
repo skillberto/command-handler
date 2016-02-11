@@ -36,7 +36,11 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
 
     public function testCorrectCommandWithoutSkip()
     {
-        $this->commandHandler->execute();
+        $that = $this;
+
+        $this->commandHandler->execute(function(Process $process, Command $command) use ($that) {
+            $that->assertNull($process->getTimeout());
+        });
 
         $this->assertOutputEquals(
             $this->correctOutput . $this->correctOutput
