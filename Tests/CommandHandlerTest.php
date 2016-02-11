@@ -8,6 +8,8 @@ use Symfony\Component\Process\Process;
 
 class CommandHandlerTest extends \PHPUnit_Framework_TestCase
 {
+    protected $prefix = "php ";
+
     /**
      * @var CommandHandler
      */
@@ -94,9 +96,9 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
 
     public function testPrefix()
     {
-        list($prefix, $command) = $this->createPrefixAndCommand("php ");
+        $command = $this->prepareCommandWithoutPrefix($this->correctCommand_1, $this->prefix);
 
-        $this->commandHandler = $this->createHandler($command, $prefix);
+        $this->commandHandler = $this->createHandler($command, $this->prefix);
 
         $this->commandHandler->execute();
 
@@ -149,20 +151,21 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * Cut prefix from the beginning of command and return that
+     *
+     * @param  string $command
      * @param  string $prefix
-     * @return array
+     * @return string
      */
-    protected function createPrefixAndCommand($prefix)
+    protected function prepareCommandWithoutPrefix($command, $prefix)
     {
-        $correctCommand_1 = $this->correctCommand_1;
-
-        if (substr($correctCommand_1, 0, strlen($prefix)) == $prefix) {
-            $correctCommand_1 = substr($correctCommand_1, strlen($prefix));
+        if (substr($command, 0, strlen($prefix)) == $prefix) {
+            $command = substr($command, strlen($prefix));
         } else {
             throw new \InvalidArgumentException(sprintf('%s command is incorrect, %s prefix is not found at the beginning of command.', $correctCommand_1, $prefix));
         }
 
-        return array($prefix, $correctCommand_1);
+        return $command;
     }
 
     /**
