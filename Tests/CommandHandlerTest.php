@@ -10,6 +10,10 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
 {
     protected $prefix = "php ";
 
+    protected $commandHandlerTimeout = 0.2;
+
+    protected $injectedHandlerTimeout = 0.1;
+
     /**
      * @var CommandHandler
      */
@@ -21,9 +25,13 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
 
     protected $wrongCommand = "php ./Tests/Resources/test_wrong.php";
 
-    protected $correctOutput = "Executing: php ./Tests/Resources/test_correct_1.php\nfoo";
+    protected $correctOutput_1 = "Executing: php ./Tests/Resources/test_correct_1.php\nfoo";
+
+    protected $correctOutput_2 = "Executing: php ./Tests/Resources/test_correct_2.php\nfoo";
 
     protected $wrongOutput = "Executing: php ./Tests/Resources/test_wrong.php\n";
+
+    protected $doublePrefixErrorOutput = "Executing: php php ./Tests/Resources/test_correct_2.php\nCould not open input file: php\nError: php php ./Tests/Resources/test_correct_2.php\n";
 
     protected $skipOutput = "Skipped: php ./Tests/Resources/test_wrong.php\n";
 
@@ -43,7 +51,7 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
         });
 
         $this->assertOutputEquals(
-            $this->correctOutput . $this->correctOutput
+            $this->correctOutput_1 . $this->correctOutput_1
         );
     }
 
@@ -55,7 +63,7 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
             ->execute();
 
         $this->assertOutputEquals(
-            $this->correctOutput . $this->correctOutput . $this->correctOutput . $this->correctOutput
+            $this->correctOutput_1 . $this->correctOutput_1 . $this->correctOutput_1 . $this->correctOutput_1
         );
     }
 
@@ -66,13 +74,13 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
         $that->commandHandler = $that->createHandler();
 
         $that->commandHandler
-            ->setTimeout(0.2)
-            ->addCommand(new Command($that->correctCommand_2, true, 0.3))
+            ->setTimeout($that->commandHandlerTimeout)
+            ->addCommand(new Command($that->correctCommand_2, true, $that->injectedHandlerTimeout))
             ->execute(function(Process $process, Command $command) use ($that) {
                 if ($that->correctCommand_2 == $command->getCommand()) {
-                    $that->assertEquals($command->getTimeout(), $process->getTimeout());
+                    $that->assertEquals($that->injectedHandlerTimeout, $process->getTimeout());
                 } else {
-                    $that->assertEquals($that->commandHandler->getTimeout(), $process->getTimeout());
+                    $that->assertEquals($that->commandHandlerTimeout, $process->getTimeout());
                 }
             });
     }
@@ -84,7 +92,7 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
             ->execute();
 
         $this->assertOutputEquals(
-            $this->correctOutput . $this->correctOutput . $this->wrongOutput . $this->skipOutput
+            $this->correctOutput_1 . $this->correctOutput_1 . $this->wrongOutput . $this->skipOutput
         );
     }
 
@@ -95,7 +103,7 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
             ->execute();
 
         $this->assertOutputEquals(
-            $this->correctOutput . $this->correctOutput . $this->wrongOutput . $this->errorOutput
+            $this->correctOutput_1 . $this->correctOutput_1 . $this->wrongOutput . $this->errorOutput
         );
 
     }
@@ -109,92 +117,212 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
         $this->commandHandler->execute();
 
         $this->assertOutputEquals(
-            $this->correctOutput . $this->correctOutput
+            $this->correctOutput_1 . $this->correctOutput_1
         );
     }
 
-    public function testAddHandler()
-    {
-        $handler = $this->createHandler($this->correctCommand_1);
-
-        $this->commandHandler
-            ->addHandler($handler)
-            ->execute();
-
-        $this->assertOutputEquals(
-            $this->correctOutput . $this->correctOutput . $this->correctOutput . $this->correctOutput
-        );
-    }
-
-    public function testAddHandlerWithLocalPrefix()
-    {
-        //inject with prefix and not use the local
-        $handler = $this->createHandler($this->correctCommand_1);
-
-        $command = $this->prepareCommandWithoutPrefix($this->correctCommand_1, $this->prefix);
-
-        $this->commandHandler = $this->createHandler($command, $this->prefix);
-        $this->commandHandler
-            ->addHandler($handler)
-            ->execute();
-
-        $this->assertOutputEquals(
-            $this->correctOutput . $this->correctOutput . $this->correctOutput . $this->correctOutput
-        );
-
-        //inject without prefix and use the local
-        $command = $this->prepareCommandWithoutPrefix($this->correctCommand_1, $this->prefix);
-
-        $handler = $this->createHandler($command);
-
-        $this->commandHandler
-            ->addHandler($handler, true)
-            ->execute();
-
-        $this->assertOutputEquals(
-            $this->correctOutput . $this->correctOutput . $this->correctOutput . $this->correctOutput . $this->correctOutput . $this->correctOutput
-        );
-    }
-
-    public function testAddHandlerWithTimeout()
+    public function testAddHandlerWithoutLocalPropertiesWith_MERGE_ALL()
     {
         $that = $this;
 
-        $handler = $that->createHandler($that->correctCommand_2);
+        $this->createWithoutLocalProperties(
+            CommandHandler::MERGE_ALL,
+            function (Process $process, Command $command) use ($that) {
+                $that->assertNull($process->getTimeout());
+            },
+            $that->correctOutput_1 . $that->correctOutput_1 . $that->correctOutput_2 . $that->correctOutput_2,
+            function (Process $process, Command $command) use ($that) {
+                $that->assertNull($process->getTimeout());
+            },
+            $that->correctOutput_1 . $that->correctOutput_1 . $that->correctOutput_2 . $that->correctOutput_2
+        );
+    }
 
-        //not use local
-        $that->commandHandler = $that->createHandler($that->correctCommand_1, "", 0.2);
-        $that->commandHandler
-            ->addHandler($handler)
-            ->execute(function(Process $process, Command $command) use ($that){
-                if ($that->correctCommand_2 == $command->getCommand()) {
+    public function testAddHandlerWithLocalPropertiesWith_MERGE_ALL()
+    {
+        $that = $this;
+
+        $this->createWithLocalProperties(
+            CommandHandler::MERGE_ALL,
+            function (Process $process, Command $command) use ($that) {
+                $that->assertEquals($that->commandHandler->getTimeout(), $process->getTimeout());
+            },
+            $that->correctOutput_1 . $that->correctOutput_1 . $that->doublePrefixErrorOutput,
+            function (Process $process, Command $command) use ($that) {
+                $that->assertEquals($that->commandHandler->getTimeout(), $process->getTimeout());
+            },
+            $that->correctOutput_1 . $that->correctOutput_1 . $that->doublePrefixErrorOutput
+        );
+    }
+
+    public function testAddHandlerWithoutLocalPropertiesWith_MERGE_NOT_DEFINED()
+    {
+        $that = $this;
+
+        $this->createWithoutLocalProperties(
+            CommandHandler::MERGE_NOT_DEFINED,
+            function (Process $process, Command $command) use ($that) {
+                $that->assertNull($process->getTimeout());
+            },
+            $that->correctOutput_1 . $that->correctOutput_1 . $that->correctOutput_2 . $that->correctOutput_2,
+            function (Process $process, Command $command) use ($that) {
+                if ($command->getCommand() == $that->correctCommand_2) {
+                    $that->assertEquals($that->injectedHandlerTimeout, $process->getTimeout());
+                } else {
+                    $that->assertNull($process->getTimeout());
+                }
+            },
+            $that->correctOutput_1 . $that->correctOutput_1 . $that->correctOutput_2 . $that->correctOutput_2
+        );
+    }
+
+    public function testAddHandlerWithLocalPropertiesWith_MERGE_NOT_DEFINED()
+    {
+        $that = $this;
+
+        $this->createWithLocalProperties(
+            CommandHandler::MERGE_NOT_DEFINED,
+            function (Process $process, Command $command) use ($that) {
+                $that->assertEquals($that->commandHandler->getTimeout(), $process->getTimeout());
+            },
+            $that->correctOutput_1 . $that->correctOutput_1 . $that->doublePrefixErrorOutput,
+            function (Process $process, Command $command) use ($that) {
+                if ($command->getCommand() == $that->correctCommand_2) {
+                    $that->assertEquals($that->injectedHandlerTimeout, $process->getTimeout());
+                } else {
+                    $that->assertEquals($that->commandHandler->getTimeout(), $process->getTimeout());
+                }
+            },
+            $that->correctOutput_1 . $that->correctOutput_1 . $that->correctOutput_2 . $that->correctOutput_2
+        );
+    }
+
+    public function testAddHandlerWithoutLocalPropertiesWith_MERGE_NON()
+    {
+        $that = $this;
+
+        $this->createWithoutLocalProperties(
+            CommandHandler::MERGE_NON,
+            function (Process $process, Command $command) use ($that) {
+                $that->assertNull($process->getTimeout());
+            },
+            $that->correctOutput_1 . $that->correctOutput_1 . $that->correctOutput_2 . $that->correctOutput_2,
+            function (Process $process, Command $command) use ($that) {
+                if ($command->getCommand() == $that->correctCommand_2) {
+                    $that->assertEquals($that->injectedHandlerTimeout, $process->getTimeout());
+                } else {
+                    $that->assertNull($process->getTimeout());
+                }
+            },
+            $that->correctOutput_1 . $that->correctOutput_1 . $that->correctOutput_2 . $that->correctOutput_2
+        );
+    }
+
+    public function testAddHandlerWithLocalPropertiesWith_MERGE_NON()
+    {
+        $that = $this;
+
+        $this->createWithLocalProperties(
+            CommandHandler::MERGE_NON,
+            function (Process $process, Command $command) use ($that) {
+                if ($command->getCommand() == $that->correctCommand_2) {
                     $that->assertNull($process->getTimeout());
                 } else {
                     $that->assertEquals($that->commandHandler->getTimeout(), $process->getTimeout());
                 }
-            });
-
-        $handler = $that->createHandler();
-        $handler->addCommand(new Command($that->correctCommand_2, true, 0.1));
-
-        $that->commandHandler = $that->createHandler($that->correctCommand_1, "", 0.2);
-        $that->commandHandler
-            ->addHandler($handler)
-            ->execute(function(Process $process, Command $command) use ($that){
-                if ($that->correctCommand_2 == $command->getCommand()) {
-                    $that->assertEquals($process->getTimeout(), 0.1);
+            },
+            $that->correctOutput_1 . $that->correctOutput_1 . $that->correctOutput_2 . $that->correctOutput_2,
+            function (Process $process, Command $command) use ($that) {
+                if ($command->getCommand() == $that->correctCommand_2) {
+                    $that->assertEquals($that->injectedHandlerTimeout, $process->getTimeout());
                 } else {
-                    $that->assertEquals($process->getTimeout(), $that->commandHandler->getTimeout());
+                    $that->assertEquals($that->commandHandler->getTimeout(), $process->getTimeout());
                 }
-            });
+            },
+            $that->correctOutput_1 . $that->correctOutput_1 . $that->correctOutput_2 . $that->correctOutput_2
+        );
+    }
 
-        //use local
+    protected function createWithoutLocalProperties(
+        $mergeType,
+        $executeCallbackWithoutInjectedProperties,
+        $outputWithoutInjectedProperties,
+        $executeCallbackWithInjectedProperties,
+        $outputWithInjectedProperties
+    ) {
+        $that = $this;
+
+        $command_2 = $that->prepareCommandWithoutPrefix($this->correctCommand_2, $that->prefix);
+
+        /**
+         * Inject without prefix and timeout
+         */
+        $injectedHandler = $that->createHandler($that->correctCommand_2);
+
         $that->commandHandler = $that->createHandler($that->correctCommand_1);
         $that->commandHandler
-            ->addHandler($handler, false, true)
-            ->execute(function(Process $process, Command $command) use ($that){
-                $that->assertEquals($process->getTimeout(), $that->commandHandler->getTimeout());
-            });
+            ->addHandler($injectedHandler, $mergeType, $mergeType)
+            ->execute($executeCallbackWithoutInjectedProperties);
+
+        $that->assertOutputEquals(
+            $outputWithoutInjectedProperties
+        );
+
+        /**
+         * Inject with prefix and timeout
+         */
+        $injectedHandler = $this->createHandler($command_2, $that->prefix, $that->injectedHandlerTimeout);
+
+        $that->commandHandler = $that->createHandler($this->correctCommand_1);
+        $that->commandHandler
+            ->addHandler($injectedHandler, $mergeType, $mergeType)
+            ->execute($executeCallbackWithInjectedProperties);
+
+        $that->assertOutputEquals(
+            $outputWithInjectedProperties
+        );
+    }
+
+    protected function createWithLocalProperties(
+        $mergeType,
+        $executeCallbackWithoutInjectedProperties,
+        $outputWithoutInjectedProperties,
+        $executeCallbackWithInjectedProperties,
+        $outputWithInjectedProperties
+    ) {
+        $that = $this;
+
+        $command_1 = $that->prepareCommandWithoutPrefix($that->correctCommand_1, $that->prefix);
+
+        $command_2 = $that->prepareCommandWithoutPrefix($this->correctCommand_2, $that->prefix);
+
+        /**
+         * Inject without prefix and timeout
+         */
+        $injectedHandler = $that->createHandler($that->correctCommand_2);
+
+        $that->commandHandler = $that->createHandler($command_1, $that->prefix, $that->commandHandlerTimeout);
+        $that->commandHandler
+            ->addHandler($injectedHandler, $mergeType, $mergeType)
+            ->execute($executeCallbackWithoutInjectedProperties);
+
+        $that->assertOutputEquals(
+            $outputWithoutInjectedProperties
+        );
+
+        /**
+         * Inject with prefix and timeout
+         */
+        $injectedHandler = $this->createHandler($command_2, $that->prefix, $that->injectedHandlerTimeout);
+
+        $that->commandHandler = $that->createHandler($command_1, $that->prefix, $that->commandHandlerTimeout);
+        $that->commandHandler
+            ->addHandler($injectedHandler, $mergeType, $mergeType)
+            ->execute($executeCallbackWithInjectedProperties);
+
+        $that->assertOutputEquals(
+            $outputWithInjectedProperties
+        );
     }
 
     /**

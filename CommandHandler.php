@@ -10,7 +10,7 @@ class CommandHandler
 {
     const MERGE_NON = 0;
 
-    const MERGE_EMPTY = 1;
+    const MERGE_NOT_DEFINED = 1;
 
     const MERGE_ALL = 2;
 
@@ -172,22 +172,21 @@ class CommandHandler
 
     /**
      * Merge an other CommandHandler with this.
-     * Everything used from the injected handler for that commands.
+     * Everything used from the injected handler for that commands, except the prefix and timeout. They are optional.
      *
-     * If prefix does not exist in the injected handler, then can be used optionally the current.
-     *
-     * If timeout does not exist in the injected handler, then can be used optionally the current.
+     * If $mergePrefix or $mergeTimeout params are MERGE_ALL, then will used the current property.
+     * If MERGE_NOT_DEFINED, then will used the current property if the injected not defined, otherwise use the injected property.
      *
      * @param  CommandHandler $handler  An other CommandHandler instance
-     * @param  bool           $prefix   If true, then use the current prefix if the other doesn't exist, otherwise not.
-     * @param  bool           $timeout  If true, then use the current timeout if the other doesn't exist, otherwise use "0.0".
+     * @param  int            $prefix   MERGE_ALL | MERGE_NOT_DEFINED | MERGE_NON
+     * @param  int            $timeout  MERGE_ALL | MERGE_NOT_DEFINED | MERGE_NON
      * @return $this
      */
     public function addHandler(CommandHandler $handler, $mergePrefix = self::MERGE_NON, $mergeTimeout = self::MERGE_NON)
     {
         foreach ($handler->getCommands() as $command) {
-            $internalPrefix  = ($mergePrefix == self::MERGE_ALL || ($mergePrefix == self::MERGE_EMPTY && $handler->getPrefix() == "")) ? $this->getPrefix() : $handler->getPrefix();
-            $internalTimeout = ($mergeTimeout == self::MERGE_ALL || ($mergeTimeout == self::MERGE_EMPTY && $command->getTimeout() === null)) ? $this->getTimeout() : $command->getTimeout();
+            $internalPrefix  = ($mergePrefix == self::MERGE_ALL || ($mergePrefix == self::MERGE_NOT_DEFINED && $handler->getPrefix() == "")) ? $this->getPrefix() : "";
+            $internalTimeout = ($mergeTimeout == self::MERGE_ALL || ($mergeTimeout == self::MERGE_NOT_DEFINED && $command->getTimeout() === null)) ? $this->getTimeout() : $command->getTimeout();
 
             $data = $internalPrefix . $command->getCommand();
 
