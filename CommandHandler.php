@@ -245,15 +245,20 @@ class CommandHandler
         return $this->error ? true : false;
     }
 
+    /**
+     * @return bool
+     */
     public function getSkippedMessages()
     {
         if (!$this->hasSkipped()) {
-            return;
+            return false;
         }
 
         foreach ($this->skipped as $command) {
             $this->info($command, 'Skipped');
         }
+
+        return true;
     }
 
     /**
@@ -262,10 +267,12 @@ class CommandHandler
     public function getErrorMessage()
     {
         if (!$this->hasError()) {
-            return;
+            return false;
         }
 
         $this->info($this->error, 'Error');
+
+        return true;
     }
 
     protected function iterateCommands(Command $command, $callback = null)
