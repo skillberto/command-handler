@@ -29,7 +29,7 @@ class CommandHandler
     /**
      * @param OutputInterface $outputInterface
      * @param string          $prefix
-     * @param float           $timeout
+     * @param int|float|null  $timeout The timeout in seconds
      */
     public function __construct(OutputInterface $outputInterface, $prefix = "", $timeout = null)
     {
@@ -39,7 +39,7 @@ class CommandHandler
     }
 
     /**
-     * @param  float|null $timeout
+     * @param  int|float|null $timeout The timeout in seconds
      * @return $this
      */
     public function setTimeout($timeout = null)
@@ -57,9 +57,14 @@ class CommandHandler
         return $this->timeout;
     }
 
+    /**
+     * @param string $prefix
+     */
     public function addPrefix($prefix = "")
     {
         $this->prefix = $prefix;
+
+        return $this;
     }
 
     /**
@@ -293,9 +298,9 @@ class CommandHandler
     }
 
     /**
-     * @param string $command
-     * @param bool   $required
-     * @param float  $timeout
+     * @param string         $command
+     * @param bool           $required
+     * @param int|float|null $timeout The timeout in seconds
      *
      * @return Command
      */
