@@ -28,17 +28,18 @@ class CommandHandler
     /**
      * @param OutputInterface $outputInterface
      * @param string          $prefix
-     * @param int|float|null  $timeout The timeout in seconds
+     * @param int|float|null  $timeout         The timeout in seconds
      */
-    public function __construct(OutputInterface $outputInterface, $prefix = "", $timeout = null)
+    public function __construct(OutputInterface $outputInterface, $prefix = '', $timeout = null)
     {
-        $this->output  = $outputInterface;
-        $this->prefix  = $prefix;
+        $this->output = $outputInterface;
+        $this->prefix = $prefix;
         $this->timeout = $timeout;
     }
 
     /**
-     * @param  int|float|null $timeout The timeout in seconds
+     * @param int|float|null $timeout The timeout in seconds
+     *
      * @return $this
      */
     public function setTimeout($timeout = null)
@@ -58,8 +59,10 @@ class CommandHandler
 
     /**
      * @param string $prefix
+     *
+     * @return $this
      */
-    public function addPrefix($prefix = "")
+    public function addPrefix($prefix = '')
     {
         $this->prefix = $prefix;
 
@@ -83,12 +86,13 @@ class CommandHandler
     }
 
     /**
-     * @param  Command $command
+     * @param Command $command
+     *
      * @return $this
      */
     public function addCommand(Command $command)
     {
-        $data = $this->prefix . $command->getCommand();
+        $data = $this->prefix.$command->getCommand();
 
         $command->setCommand($data);
 
@@ -102,7 +106,8 @@ class CommandHandler
     }
 
     /**
-     * @param  array $commands Command collection
+     * @param array $commands Command collection
+     *
      * @return $this
      */
     public function addCommands(array $commands)
@@ -123,7 +128,8 @@ class CommandHandler
     }
 
     /**
-     * @param  string $commandString
+     * @param string $commandString
+     *
      * @return $this
      */
     public function add($commandString)
@@ -136,7 +142,8 @@ class CommandHandler
     }
 
     /**
-     * @param  array $commandStrings
+     * @param array $commandStrings
+     *
      * @return $this
      */
     public function addCollection(array $commandStrings)
@@ -149,7 +156,8 @@ class CommandHandler
     }
 
     /**
-     * @param  string $commandString
+     * @param string $commandString
+     *
      * @return $this
      */
     public function addSkippable($commandString)
@@ -162,7 +170,8 @@ class CommandHandler
     }
 
     /**
-     * @param  array $commandStrings
+     * @param array $commandStrings
+     *
      * @return $this
      */
     public function addSkippableCollection(array $commandStrings)
@@ -181,18 +190,19 @@ class CommandHandler
      * If $mergePrefix or $mergeTimeout params are MERGE_ALL, then will used the current property.
      * If MERGE_NOT_DEFINED, then will used the current property if the injected not defined, otherwise use the injected property.
      *
-     * @param  CommandHandler $handler  An other CommandHandler instance
-     * @param  int            $prefix   MERGE_ALL | MERGE_NOT_DEFINED | MERGE_NON
-     * @param  int            $timeout  MERGE_ALL | MERGE_NOT_DEFINED | MERGE_NON
+     * @param CommandHandler $handler An other CommandHandler instance
+     * @param int            $prefix  MERGE_ALL | MERGE_NOT_DEFINED | MERGE_NON
+     * @param int            $timeout MERGE_ALL | MERGE_NOT_DEFINED | MERGE_NON
+     *
      * @return $this
      */
     public function addHandler(CommandHandler $handler, $mergePrefix = self::MERGE_NON, $mergeTimeout = self::MERGE_NON)
     {
         foreach ($handler->getCommands() as $command) {
-            $internalPrefix  = ($mergePrefix == self::MERGE_ALL || ($mergePrefix == self::MERGE_NOT_DEFINED && $handler->getPrefix() == "")) ? $this->getPrefix() : "";
+            $internalPrefix = ($mergePrefix == self::MERGE_ALL || ($mergePrefix == self::MERGE_NOT_DEFINED && $handler->getPrefix() == '')) ? $this->getPrefix() : '';
             $internalTimeout = ($mergeTimeout == self::MERGE_ALL || ($mergeTimeout == self::MERGE_NOT_DEFINED && $command->getTimeout() === null)) ? $this->getTimeout() : $command->getTimeout();
 
-            $data = $internalPrefix . $command->getCommand();
+            $data = $internalPrefix.$command->getCommand();
 
             $command->setCommand($data);
             $command->setTimeout($internalTimeout);
@@ -204,13 +214,14 @@ class CommandHandler
     }
 
     /**
-     * @param  callback|null $callback Current Process and Command are injected
+     * @param callback|null $callback Current Process and Command are injected
+     *
      * @return $this
      */
     public function execute($callback = null)
     {
         foreach ($this->commands as $command) {
-            if (! $this->iterateCommands($command, $callback)) {
+            if (!$this->iterateCommands($command, $callback)) {
                 return $this;
             }
         }
@@ -236,7 +247,7 @@ class CommandHandler
 
     public function getSkippedMessages()
     {
-        if (! $this->hasSkipped()) {
+        if (!$this->hasSkipped()) {
             return;
         }
 
@@ -250,7 +261,7 @@ class CommandHandler
      */
     public function getErrorMessage()
     {
-        if (! $this->hasError()) {
+        if (!$this->hasError()) {
             return;
         }
 
@@ -266,7 +277,7 @@ class CommandHandler
         $p = $this->createProcess($command->getCommand());
         $p->setTimeout($command->getTimeout());
         $p->setPty(true);
-        $p->run(function($type, $data) use ($that, $callback, $p, $command) {
+        $p->run(function ($type, $data) use ($that, $callback, $p, $command) {
             $that->output->write($data, false, OutputInterface::OUTPUT_RAW);
 
             if ($callback !== null) {
@@ -274,7 +285,7 @@ class CommandHandler
             }
         });
 
-        if (!$p->isSuccessful()){
+        if (!$p->isSuccessful()) {
             if ($command->isRequired()) {
                 $this->error = $command;
 
@@ -299,7 +310,7 @@ class CommandHandler
     /**
      * @param string         $command
      * @param bool           $required
-     * @param int|float|null $timeout The timeout in seconds
+     * @param int|float|null $timeout  The timeout in seconds
      *
      * @return Command
      */
@@ -309,7 +320,7 @@ class CommandHandler
     }
 
     /**
-     * @param  string $commandString
+     * @param string $commandString
      *
      * @return Process
      */

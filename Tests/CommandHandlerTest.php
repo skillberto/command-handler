@@ -8,7 +8,7 @@ use Symfony\Component\Process\Process;
 
 class CommandHandlerTest extends \PHPUnit_Framework_TestCase
 {
-    protected $prefix = "php ";
+    protected $prefix = 'php ';
 
     protected $commandHandlerTimeout = 0.2;
 
@@ -19,11 +19,11 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
      */
     protected $commandHandler;
 
-    protected $correctCommand_1 = "php ./Tests/Resources/test_correct_1.php";
+    protected $correctCommand_1 = 'php ./Tests/Resources/test_correct_1.php';
 
-    protected $correctCommand_2 = "php ./Tests/Resources/test_correct_2.php";
+    protected $correctCommand_2 = 'php ./Tests/Resources/test_correct_2.php';
 
-    protected $wrongCommand = "php ./Tests/Resources/test_wrong.php";
+    protected $wrongCommand = 'php ./Tests/Resources/test_wrong.php';
 
     protected $correctOutput_1 = "Executing: php ./Tests/Resources/test_correct_1.php\nfoo";
 
@@ -46,12 +46,12 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
     {
         $that = $this;
 
-        $this->commandHandler->execute(function(Process $process, Command $command) use ($that) {
+        $this->commandHandler->execute(function (Process $process, Command $command) use ($that) {
             $that->assertNull($process->getTimeout());
         });
 
         $this->assertOutputEquals(
-            $this->correctOutput_1 . $this->correctOutput_1
+            $this->correctOutput_1.$this->correctOutput_1
         );
     }
 
@@ -63,7 +63,7 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
             ->execute();
 
         $this->assertOutputEquals(
-            $this->correctOutput_1 . $this->correctOutput_1 . $this->correctOutput_1 . $this->correctOutput_1
+            $this->correctOutput_1.$this->correctOutput_1.$this->correctOutput_1.$this->correctOutput_1
         );
     }
 
@@ -76,7 +76,7 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
         $that->commandHandler
             ->setTimeout($that->commandHandlerTimeout)
             ->addCommand(new Command($that->correctCommand_2, true, $that->injectedHandlerTimeout))
-            ->execute(function(Process $process, Command $command) use ($that) {
+            ->execute(function (Process $process, Command $command) use ($that) {
                 if ($that->correctCommand_2 == $command->getCommand()) {
                     $that->assertEquals($that->injectedHandlerTimeout, $process->getTimeout());
                 } else {
@@ -92,7 +92,7 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
             ->execute();
 
         $this->assertOutputEquals(
-            $this->correctOutput_1 . $this->correctOutput_1 . $this->wrongOutput . $this->skipOutput
+            $this->correctOutput_1.$this->correctOutput_1.$this->wrongOutput.$this->skipOutput
         );
     }
 
@@ -103,9 +103,8 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
             ->execute();
 
         $this->assertOutputEquals(
-            $this->correctOutput_1 . $this->correctOutput_1 . $this->wrongOutput . $this->errorOutput
+            $this->correctOutput_1.$this->correctOutput_1.$this->wrongOutput.$this->errorOutput
         );
-
     }
 
     public function testPrefix()
@@ -117,7 +116,7 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
         $this->commandHandler->execute();
 
         $this->assertOutputEquals(
-            $this->correctOutput_1 . $this->correctOutput_1
+            $this->correctOutput_1.$this->correctOutput_1
         );
     }
 
@@ -130,11 +129,11 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
             function (Process $process, Command $command) use ($that) {
                 $that->assertNull($process->getTimeout());
             },
-            $that->correctOutput_1 . $that->correctOutput_1 . $that->correctOutput_2 . $that->correctOutput_2,
+            $that->correctOutput_1.$that->correctOutput_1.$that->correctOutput_2.$that->correctOutput_2,
             function (Process $process, Command $command) use ($that) {
                 $that->assertNull($process->getTimeout());
             },
-            $that->correctOutput_1 . $that->correctOutput_1 . $that->correctOutput_2 . $that->correctOutput_2
+            $that->correctOutput_1.$that->correctOutput_1.$that->correctOutput_2.$that->correctOutput_2
         );
     }
 
@@ -147,11 +146,11 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
             function (Process $process, Command $command) use ($that) {
                 $that->assertEquals($that->commandHandler->getTimeout(), $process->getTimeout());
             },
-            $that->correctOutput_1 . $that->correctOutput_1 . $that->doublePrefixErrorOutput,
+            $that->correctOutput_1.$that->correctOutput_1.$that->doublePrefixErrorOutput,
             function (Process $process, Command $command) use ($that) {
                 $that->assertEquals($that->commandHandler->getTimeout(), $process->getTimeout());
             },
-            $that->correctOutput_1 . $that->correctOutput_1 . $that->doublePrefixErrorOutput
+            $that->correctOutput_1.$that->correctOutput_1.$that->doublePrefixErrorOutput
         );
     }
 
@@ -164,7 +163,7 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
             function (Process $process, Command $command) use ($that) {
                 $that->assertNull($process->getTimeout());
             },
-            $that->correctOutput_1 . $that->correctOutput_1 . $that->correctOutput_2 . $that->correctOutput_2,
+            $that->correctOutput_1.$that->correctOutput_1.$that->correctOutput_2.$that->correctOutput_2,
             function (Process $process, Command $command) use ($that) {
                 if ($command->getCommand() == $that->correctCommand_2) {
                     $that->assertEquals($that->injectedHandlerTimeout, $process->getTimeout());
@@ -172,7 +171,7 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
                     $that->assertNull($process->getTimeout());
                 }
             },
-            $that->correctOutput_1 . $that->correctOutput_1 . $that->correctOutput_2 . $that->correctOutput_2
+            $that->correctOutput_1.$that->correctOutput_1.$that->correctOutput_2.$that->correctOutput_2
         );
     }
 
@@ -185,7 +184,7 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
             function (Process $process, Command $command) use ($that) {
                 $that->assertEquals($that->commandHandler->getTimeout(), $process->getTimeout());
             },
-            $that->correctOutput_1 . $that->correctOutput_1 . $that->doublePrefixErrorOutput,
+            $that->correctOutput_1.$that->correctOutput_1.$that->doublePrefixErrorOutput,
             function (Process $process, Command $command) use ($that) {
                 if ($command->getCommand() == $that->correctCommand_2) {
                     $that->assertEquals($that->injectedHandlerTimeout, $process->getTimeout());
@@ -193,7 +192,7 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
                     $that->assertEquals($that->commandHandler->getTimeout(), $process->getTimeout());
                 }
             },
-            $that->correctOutput_1 . $that->correctOutput_1 . $that->correctOutput_2 . $that->correctOutput_2
+            $that->correctOutput_1.$that->correctOutput_1.$that->correctOutput_2.$that->correctOutput_2
         );
     }
 
@@ -206,7 +205,7 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
             function (Process $process, Command $command) use ($that) {
                 $that->assertNull($process->getTimeout());
             },
-            $that->correctOutput_1 . $that->correctOutput_1 . $that->correctOutput_2 . $that->correctOutput_2,
+            $that->correctOutput_1.$that->correctOutput_1.$that->correctOutput_2.$that->correctOutput_2,
             function (Process $process, Command $command) use ($that) {
                 if ($command->getCommand() == $that->correctCommand_2) {
                     $that->assertEquals($that->injectedHandlerTimeout, $process->getTimeout());
@@ -214,7 +213,7 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
                     $that->assertNull($process->getTimeout());
                 }
             },
-            $that->correctOutput_1 . $that->correctOutput_1 . $that->correctOutput_2 . $that->correctOutput_2
+            $that->correctOutput_1.$that->correctOutput_1.$that->correctOutput_2.$that->correctOutput_2
         );
     }
 
@@ -231,7 +230,7 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
                     $that->assertEquals($that->commandHandler->getTimeout(), $process->getTimeout());
                 }
             },
-            $that->correctOutput_1 . $that->correctOutput_1 . $that->correctOutput_2 . $that->correctOutput_2,
+            $that->correctOutput_1.$that->correctOutput_1.$that->correctOutput_2.$that->correctOutput_2,
             function (Process $process, Command $command) use ($that) {
                 if ($command->getCommand() == $that->correctCommand_2) {
                     $that->assertEquals($that->injectedHandlerTimeout, $process->getTimeout());
@@ -239,7 +238,7 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
                     $that->assertEquals($that->commandHandler->getTimeout(), $process->getTimeout());
                 }
             },
-            $that->correctOutput_1 . $that->correctOutput_1 . $that->correctOutput_2 . $that->correctOutput_2
+            $that->correctOutput_1.$that->correctOutput_1.$that->correctOutput_2.$that->correctOutput_2
         );
     }
 
@@ -254,7 +253,7 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
 
         $command_2 = $that->prepareCommandWithoutPrefix($this->correctCommand_2, $that->prefix);
 
-        /**
+        /*
          * Inject without prefix and timeout
          */
         $injectedHandler = $that->createHandler($that->correctCommand_2);
@@ -268,7 +267,7 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
             $outputWithoutInjectedProperties
         );
 
-        /**
+        /*
          * Inject with prefix and timeout
          */
         $injectedHandler = $this->createHandler($command_2, $that->prefix, $that->injectedHandlerTimeout);
@@ -296,7 +295,7 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
 
         $command_2 = $that->prepareCommandWithoutPrefix($this->correctCommand_2, $that->prefix);
 
-        /**
+        /*
          * Inject without prefix and timeout
          */
         $injectedHandler = $that->createHandler($that->correctCommand_2);
@@ -310,7 +309,7 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
             $outputWithoutInjectedProperties
         );
 
-        /**
+        /*
          * Inject with prefix and timeout
          */
         $injectedHandler = $this->createHandler($command_2, $that->prefix, $that->injectedHandlerTimeout);
@@ -326,12 +325,13 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @param  $output
+     * @param string $output
+     *
      * @return string
      */
     protected function formatOutput($output)
     {
-        return preg_replace( "/\r|\n/", "",$output);
+        return preg_replace("/\r|\n/", '', $output);
     }
 
     /**
@@ -351,10 +351,11 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * Cut prefix from the beginning of command and return that
+     * Cut prefix from the beginning of command and return that.
      *
-     * @param  string $command
-     * @param  string $prefix
+     * @param string $command
+     * @param string $prefix
+     *
      * @return string
      */
     protected function prepareCommandWithoutPrefix($command, $prefix)
@@ -369,19 +370,19 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @param  string $command
-     * @param  string $prefix
-     * @param  float  $timeout
+     * @param string $command
+     * @param string $prefix
+     * @param float  $timeout
      *
      * @return CommandHandler With two command ($command)
      */
-    protected function createHandler($command = "", $prefix = "", $timeout = null)
+    protected function createHandler($command = '', $prefix = '', $timeout = null)
     {
         $output = new BufferedOutput();
 
         $commandHandler = new CommandHandler($output, $prefix, $timeout);
 
-        if ($command != "") {
+        if ($command != '') {
             $commandHandler
                 ->add($command)
                 ->addCollection(array($command));
