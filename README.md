@@ -128,13 +128,13 @@ $handler_1->addHandler($handler_2);
 It's good, but what will be with prefixes and timeout?
 For these problems, CommandHandler has got three different merge types:
 ```MERGE_ALL, MERGE_NON, MERGE_NOT_DEFINED```
-The default is ```MERGE_NON``, but you can change it:
+The default is ```MERGE_NON```, but you can change it:
 ```
 $handler_1->addHandler($handler_2, CommandHandler::MERGE_ALL, CommandHandler::MERGE_NOT_DEFINED);
 ```
 In the previous example prefix merge has got ```MERGE_ALL``` type, timeout has got ```MERGE_NOT_DEFINED``` type.
-```MERGE_ALL``` means that ```$handler_1``` prefix or/and timeout will use for all of them.
-```MERGE_NOT_DEFINED``` means that ```$handler_1``` prefix or/and timeout will use, if it's not defined for ```$handler_2``` command(s).
+```MERGE_ALL``` means that ```$handler_1``` prefix / timeout will use for all of them.
+```MERGE_NOT_DEFINED``` means that ```$handler_1``` prefix / timeout will use, if it's not defined for ```$handler_2``` command(s).
 ```MERGE_NON``` means that prefixes and timeouts will be separated.
 
 ### Callback
