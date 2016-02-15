@@ -74,11 +74,11 @@ The following example show you have can you use the prefix:
 ```
 ...
 
-$handler = new CommandHandler($output, "php ")
+$handler = new CommandHandler($output, "php ");
 
 ... or
 
-$handler = new CommandHandler($output)
+$handler = new CommandHandler($output);
 $handler->addPrefix("php ");
 
 ... then
@@ -90,14 +90,14 @@ In this case, you will execute ```php --version```.
 
 ### Timeout
 
-It can be defined for each command, or only for some command, or both of them.
-
-$handler = new CommandHandler($output, "", 0.2)
+It can be defined for each command, or only for some commands, or both of them.
+```
+$handler = new CommandHandler($output, "", 0.2);
 
 ... or
 
-$handler = new CommandHandler($output)
-$handler->setTimeout(0.2)
+$handler = new CommandHandler($output);
+$handler->setTimeout(0.2);
 
 ... then
 
@@ -109,7 +109,7 @@ In the previous example every command will have "0.2 seconds" for execution, exc
 
 Let's see how can define group timeout:
 ```
-$handler = new CommandHandler($output)
+$handler = new CommandHandler($output);
 $handler->setTimeout(0.2);
 $handler->addCollection(array('some command'));
 $handler->setTimeout(0.3);
