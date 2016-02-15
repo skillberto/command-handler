@@ -34,7 +34,7 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
         $this->commandHandler = $this->createHandler($this->correctCommand_1);
     }
 
-    public function testCorrectCommandWithoutSkip()
+    public function testCorrectCommand()
     {
         $that = $this;
 
@@ -63,14 +63,16 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
     {
         $that = $this;
 
-        $this->commandHandler
-            ->addCommand(new Command($this->correctCommand_2, false, 0.3))
+        $that->commandHandler = $that->createHandler();
+
+        $that->commandHandler
             ->setTimeout(0.2)
+            ->addCommand(new Command($that->correctCommand_2, true, 0.3))
             ->execute(function(Process $process, Command $command) use ($that) {
-                if ($that->correctCommand_2 == $command->get()) {
-                    $that->assertEquals($process->getTimeout(), $command->getTimeout());
+                if ($that->correctCommand_2 == $command->getCommand()) {
+                    $that->assertEquals($command->getTimeout(), $process->getTimeout());
                 } else {
-                    $that->assertEquals($process->getTimeout(), $that->commandHandler->getTimeout());
+                    $that->assertEquals($that->commandHandler->getTimeout(), $process->getTimeout());
                 }
             });
     }
@@ -154,19 +156,33 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
         );
     }
 
-    public function testAddHandlerOnlyWithLocalTimeout()
+    public function testAddHandlerWithTimeout()
     {
         $that = $this;
 
         $handler = $that->createHandler($that->correctCommand_2);
 
         //not use local
+        $that->commandHandler = $that->createHandler($that->correctCommand_1, "", 0.2);
         $that->commandHandler
-            ->setTimeout(0.2)
             ->addHandler($handler)
             ->execute(function(Process $process, Command $command) use ($that){
-                if ($that->correctCommand_2 == $command->get()) {
+                if ($that->correctCommand_2 == $command->getCommand()) {
                     $that->assertNull($process->getTimeout());
+                } else {
+                    $that->assertEquals($that->commandHandler->getTimeout(), $process->getTimeout());
+                }
+            });
+
+        $handler = $that->createHandler();
+        $handler->addCommand(new Command($that->correctCommand_2, true, 0.1));
+
+        $that->commandHandler = $that->createHandler($that->correctCommand_1, "", 0.2);
+        $that->commandHandler
+            ->addHandler($handler)
+            ->execute(function(Process $process, Command $command) use ($that){
+                if ($that->correctCommand_2 == $command->getCommand()) {
+                    $that->assertEquals($process->getTimeout(), 0.1);
                 } else {
                     $that->assertEquals($process->getTimeout(), $that->commandHandler->getTimeout());
                 }
@@ -175,7 +191,6 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
         //use local
         $that->commandHandler = $that->createHandler($that->correctCommand_1);
         $that->commandHandler
-            ->setTimeout(0.2)
             ->addHandler($handler, false, true)
             ->execute(function(Process $process, Command $command) use ($that){
                 $that->assertEquals($process->getTimeout(), $that->commandHandler->getTimeout());
@@ -228,16 +243,21 @@ class CommandHandlerTest extends \PHPUnit_Framework_TestCase
     /**
      * @param  string $command
      * @param  string $prefix
+     * @param  float  $timeout
+     *
      * @return CommandHandler With two command ($command)
      */
-    protected function createHandler($command, $prefix = "")
+    protected function createHandler($command = "", $prefix = "", $timeout = null)
     {
         $output = new BufferedOutput();
 
-        $commandHandler = new CommandHandler($output, $prefix);
-        $commandHandler
-            ->add($command)
-            ->addCollection(array($command));
+        $commandHandler = new CommandHandler($output, $prefix, $timeout);
+
+        if ($command != "") {
+            $commandHandler
+                ->add($command)
+                ->addCollection(array($command));
+        }
 
         return $commandHandler;
     }

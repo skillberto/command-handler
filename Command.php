@@ -8,21 +8,36 @@ class Command
 
     protected $timeout = null;
 
-    protected $skip = false;
+    protected $required = true;
 
-    public function __construct($command, $skip = false, $timeout = null)
+    public function __construct($command, $required = true, $timeout = null)
+    {
+        $this->setCommand($command);
+        $this->setRequired($required);
+        $this->setTimeout($timeout);
+    }
+
+    public function setCommand($command)
     {
         $this->command = $command;
-        $this->skip    = $skip;
+    }
+
+    public function setRequired($required = true)
+    {
+        $this->required = $required;
+    }
+
+    public function setTimeout($timeout)
+    {
         $this->timeout = $timeout;
     }
 
-    public function isSkippable()
+    public function isRequired()
     {
-        return $this->skip;
+        return $this->required;
     }
 
-    public function get()
+    public function getCommand()
     {
         return $this->command;
     }

@@ -10,23 +10,26 @@ class CommandTest extends \PHPUnit_Framework_TestCase
     {
         $command = new Command('asd');
 
-        $this->assertEquals('asd', $command->get());
-        $this->assertFalse($command->isSkippable());
+        $this->assertNull($command->getTimeout());
+        $this->assertTrue($command->isRequired());
+        $this->assertEquals('asd', $command->getCommand());
     }
 
-    public function testSkippableCommand()
+    public function testNotRequiredCommand()
     {
-        $command = new Command('asd', true);
+        $command = new Command('asd', false);
 
-        $this->assertEquals('asd', $command->get());
-        $this->assertTrue($command->isSkippable());
+        $this->assertNull($command->getTimeout());
+        $this->assertFalse($command->isRequired());
+        $this->assertEquals('asd', $command->getCommand());
     }
 
     public function testTimeout()
     {
-        $command = new Command('asd', false, 0.1);
+        $command = new Command('asd', true, 0.1);
 
         $this->assertEquals(0.1, $command->getTimeout());
-        $this->assertEquals('asd', $command->get());
+        $this->assertTrue($command->isRequired());
+        $this->assertEquals('asd', $command->getCommand());
     }
 }

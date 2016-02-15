@@ -8,6 +8,12 @@ use Symfony\Component\Process\Process;
 
 class CommandHandler
 {
+    const MERGE_NON = 0;
+
+    const MERGE_EMPTY = 1;
+
+    const MERGE_ALL = 2;
+
     protected $commands = array();
 
     protected $skipped = array();
@@ -23,11 +29,13 @@ class CommandHandler
     /**
      * @param OutputInterface $outputInterface
      * @param string          $prefix
+     * @param float           $timeout
      */
-    public function __construct(OutputInterface $outputInterface, $prefix = "")
+    public function __construct(OutputInterface $outputInterface, $prefix = "", $timeout = null)
     {
-        $this->output = $outputInterface;
-        $this->prefix = $prefix;
+        $this->output  = $outputInterface;
+        $this->prefix  = $prefix;
+        $this->timeout = $timeout;
     }
 
     /**
@@ -49,17 +57,42 @@ class CommandHandler
         return $this->timeout;
     }
 
+    public function addPrefix($prefix = "")
+    {
+        $this->prefix = $prefix;
+    }
+
+    /**
+     * @return string
+     */
+    public function getPrefix()
+    {
+        return $this->prefix;
+    }
+
+    /**
+     * @return OutputInterface
+     */
+    public function getOutput()
+    {
+        return $this->output;
+    }
+
     /**
      * @param  Command $command
      * @return $this
      */
     public function addCommand(Command $command)
     {
-        $data = $this->prefix . $command->get();
+        $data = $this->prefix . $command->getCommand();
 
-        $newCommand = $this->createCommand($data, $command->isSkippable(), $command->getTimeout());
+        $command->setCommand($data);
 
-        $this->commands[] = $newCommand;
+        if (null === $command->getTimeout()) {
+            $command->setTimeout($this->getTimeout());
+        }
+
+        $this->commands[] = $command;
 
         return $this;
     }
@@ -117,7 +150,7 @@ class CommandHandler
      */
     public function addSkippable($commandString)
     {
-        $command = $this->createCommand($commandString, true);
+        $command = $this->createCommand($commandString, false);
 
         $this->addCommand($command);
 
@@ -143,26 +176,25 @@ class CommandHandler
      *
      * If prefix does not exist in the injected handler, then can be used optionally the current.
      *
-     * If timeout exists in the command, then use them. If not, but exists in the injected handler, then use them.
-     * Otherwise, if the timeout input is true, then use the current timeout, if false, then will be "0.0".
-     * In this case, the timeout of the current handler is not relevant
+     * If timeout does not exist in the injected handler, then can be used optionally the current.
      *
      * @param  CommandHandler $handler  An other CommandHandler instance
      * @param  bool           $prefix   If true, then use the current prefix if the other doesn't exist, otherwise not.
      * @param  bool           $timeout  If true, then use the current timeout if the other doesn't exist, otherwise use "0.0".
      * @return $this
      */
-    public function addHandler(CommandHandler $handler, $prefix = false, $timeout = false)
+    public function addHandler(CommandHandler $handler, $mergePrefix = self::MERGE_NON, $mergeTimeout = self::MERGE_NON)
     {
         foreach ($handler->getCommands() as $command) {
-            $internalPrefix  = ($handler->getPrefix() == "" && $prefix == true) ? $this->getPrefix() : $handler->getPrefix();
-            $internalTimeout = (float) ($command->getTimeout() ?: ($handler->getTimeout() ?: (($handler->getTimeout() === null && $timeout == true) ? $this->getTimeout() : 0.0)));
+            $internalPrefix  = ($mergePrefix == self::MERGE_ALL || ($mergePrefix == self::MERGE_EMPTY && $handler->getPrefix() == "")) ? $this->getPrefix() : $handler->getPrefix();
+            $internalTimeout = ($mergeTimeout == self::MERGE_ALL || ($mergeTimeout == self::MERGE_EMPTY && $command->getTimeout() === null)) ? $this->getTimeout() : $command->getTimeout();
 
-            $data = $internalPrefix . $command->get();
+            $data = $internalPrefix . $command->getCommand();
 
-            $newCommand = $this->createCommand($data, $command->isSkippable(), $internalTimeout);
+            $command->setCommand($data);
+            $command->setTimeout($internalTimeout);
 
-            $this->commands[] = $newCommand;
+            $this->commands[] = $command;
         }
 
         return $this;
@@ -222,30 +254,14 @@ class CommandHandler
         $this->info($this->error, 'Error');
     }
 
-    /**
-     * @return OutputInterface
-     */
-    public function getOutput()
-    {
-        return $this->output;
-    }
-
-    /**
-     * @return string
-     */
-    public function getPrefix()
-    {
-        return $this->prefix;
-    }
-
     protected function iterateCommands(Command $command, $callback = null)
     {
         $that = $this;
 
         $this->info($command, 'Executing');
 
-        $p = $this->createProcess($command->get());
-        $p->setTimeout($command->getTimeout() !== null ? $command->getTimeout() : $this->getTimeout());
+        $p = $this->createProcess($command->getCommand());
+        $p->setTimeout($command->getTimeout());
         $p->setPty(true);
         $p->run(function($type, $data) use ($that, $callback, $p, $command) {
             $that->output->write($data, false, OutputInterface::OUTPUT_RAW);
@@ -256,7 +272,7 @@ class CommandHandler
         });
 
         if (!$p->isSuccessful()){
-            if ($command->isSkippable() === false) {
+            if ($command->isRequired()) {
                 $this->error = $command;
 
                 return false;
@@ -274,15 +290,19 @@ class CommandHandler
      */
     protected function info($command, $info)
     {
-        $this->output->writeln(sprintf('<info>%s:</info> %s', $info, $command->get()));
+        $this->output->writeln(sprintf('<info>%s:</info> %s', $info, $command->getCommand()));
     }
 
     /**
+     * @param string $command
+     * @param bool   $required
+     * @param float  $timeout
+     *
      * @return Command
      */
-    protected function createCommand($command, $skip = false, $timeout = null)
+    protected function createCommand($command, $required = true, $timeout = null)
     {
-        return new Command($command, $skip, $timeout);
+        return new Command($command, $required, $timeout);
     }
 
     /**
