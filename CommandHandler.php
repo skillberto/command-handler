@@ -3,7 +3,6 @@
 namespace Skillberto\CommandHandler;
 
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Process\PhpProcess;
 use Symfony\Component\Process\Process;
 
 class CommandHandler
@@ -312,7 +311,7 @@ class CommandHandler
     /**
      * @param  string $commandString
      *
-     * @return PhpProcess
+     * @return Process
      */
     protected function createProcess($commandString)
     {
