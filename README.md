@@ -5,7 +5,7 @@
 
 Install from composer:
 ```
-$ composer require skillberto/command-handler "dev-master"
+$ composer require skillberto/command-handler "~1.0"
 ```
 
 ## Authors and contributors
@@ -20,39 +20,47 @@ use \Skillberto\CommandHandler\CommandHandler;
 
 $output = new ConsoleOutput();
 $handler = new CommandHandler($output);
-$handler->add( 'some kind of command' );
+$handler->add( 'some commands' );
 
 ...
 or add more commands
 ...
 
-$handler->addCollection( array( 'some kind of commands' ) );
+$handler->addCollection( array( 'some commands' ) );
 
 $handler->execute();
 ```
-If you want to skip a command if it's not successful (and not needed):
+If you want to skip a command if it's not required:
 ```
-$handler->addSkippable('some kind of command');
+$handler->addSkippable('some commands');
 
 ...
 or add more commands
 
 ...
-$handler->addSkippableCollection( array( 'some kind of commands' ) );
+$handler->addSkippableCollection( array( 'some commands' ) );
 
 $handler->execute();
 ```
 ...after that you can get these commands:
 ```
-if ($handler->hasSkipped()) {
-    $handler->getSkippedMessages();
-}
+$handler->getSkippedMessages();
 ```
 But, if you don't skip a command, and it's not successful:
 ```
-$handler->execute();
+$handler->getErrorMessage();
 
-if ($handler->hasError()) {
-    $handler->getErrorMessage();
-}
 ```
+## Advanced usage
+### Prefix
+
+The following example show you have can you use the prefix:
+
+```
+...
+
+$handler = new CommandHandler($output, "php ")
+$handler->add("--version");
+$handler->execute();
+```
+In this case, you will execute ```php --version```.
