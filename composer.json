@@ -1,8 +1,9 @@
 {
   "name": "skillberto/command-handler",
   "license": "MIT",
-  "type": "",
-  "description": "Command handler for Symfony commands",
+  "type": "library",
+  "description": "Command handler library.",
+  "keywords": [ "install", "command" ],
   "authors": [
     {
       "name": "Norbert Heiszler",
