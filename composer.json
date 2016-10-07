@@ -2,7 +2,7 @@
   "name": "skillberto/command-handler",
   "license": "MIT",
   "type": "library",
-  "description": "Command handler library.",
+  "description": "Simple isolated command handler library.",
   "keywords": [ "install", "command" ],
   "authors": [
     {
