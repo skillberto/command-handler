@@ -1,5 +1,5 @@
 # Command Handler
-[![Build Status](https://travis-ci.org/skillberto/commandhandler.svg?branch=master)](https://travis-ci.org/skillberto/commandhandler)
+[![Build Status](https://travis-ci.org/skillberto/command-handler.svg?branch=master)](https://travis-ci.org/skillberto/command-handler)
 
 ## Install
 
