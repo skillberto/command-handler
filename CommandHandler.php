@@ -2,8 +2,11 @@
 
 namespace Skillberto\CommandHandler;
 
+use \Closure;
+use Skillberto\CommandHandler\Executor\CommandExecutor;
+use Skillberto\CommandHandler\Factory\CommandCollectionFactory;
+use Skillberto\CommandHandler\Factory\CommandExecutorFactory;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Process\Process;
 
 class CommandHandler
 {
@@ -13,17 +16,36 @@ class CommandHandler
 
     const MERGE_ALL = 2;
 
-    protected $commands = array();
+    const ALL_COMMAND = 'all';
 
-    protected $skipped = array();
+    const SKIPPED_COMMAND = 'skipped';
 
-    protected $error = null;
+    const ERROR_COMMAND = 'error';
 
+    /**
+     * @var CollectionManager
+     */
+    protected $collectionManager;
+
+    /**
+     * @var OutputInterface
+     */
     protected $output;
 
+    /**
+     * @var float|int|null
+     */
     protected $timeout = null;
 
-    protected $prefix;
+    /**
+     * @var string
+     */
+    protected $prefix = '';
+
+    /**
+     * @var CommandExecutorFactory
+     */
+    protected $executorFactory;
 
     /**
      * @param OutputInterface $outputInterface
@@ -35,6 +57,8 @@ class CommandHandler
         $this->output = $outputInterface;
         $this->prefix = $prefix;
         $this->timeout = $timeout;
+        $this->executorFactory = new CommandExecutorFactory($this->output);
+        $this->collectionManager = new CollectionManager(new CommandCollectionFactory(), $this->output);
     }
 
     /**
@@ -100,7 +124,7 @@ class CommandHandler
             $command->setTimeout($this->getTimeout());
         }
 
-        $this->commands[] = $command;
+        $this->collectionManager->getCollection(self::ALL_COMMAND)->add($command);
 
         return $this;
     }
@@ -120,11 +144,11 @@ class CommandHandler
     }
 
     /**
-     * @return array Command collection
+     * @return CommandCollection
      */
-    public function getCommands()
+    public function getCommands(): CommandCollection
     {
-        return $this->commands;
+        return $this->collectionManager->getCollection(self::ALL_COMMAND);
     }
 
     /**
@@ -132,7 +156,7 @@ class CommandHandler
      *
      * @return $this
      */
-    public function add($commandString)
+    public function add(string $commandString)
     {
         $command = $this->createCommand($commandString);
 
@@ -207,21 +231,27 @@ class CommandHandler
             $command->setCommand($data);
             $command->setTimeout($internalTimeout);
 
-            $this->commands[] = $command;
+            $this->collectionManager->getCollection(self::ALL_COMMAND)->add($command);
         }
 
         return $this;
     }
 
     /**
-     * @param callback|null $callback Current Process and Command are injected
+     * @param Closure|null $callback
      *
-     * @return $this
+     * @return CommandHandler
      */
-    public function execute($callback = null)
+    public function execute(Closure $callback = null): CommandHandler
     {
-        foreach ($this->commands as $command) {
-            if (!$this->iterateCommands($command, $callback)) {
+        $skippedCollection = $this->collectionManager->getCollection(self::SKIPPED_COMMAND);
+
+        $executor = $this->createExecutor($skippedCollection);
+
+        foreach ($this->getCommands() as $command) {
+            if (! $executor->execute($command, $callback)) {
+                $this->collectionManager->getCollection(self::ERROR_COMMAND)->add($command);
+
                 return $this;
             }
         }
@@ -232,87 +262,35 @@ class CommandHandler
     /**
      * @return bool
      */
-    public function hasSkipped()
+    public function hasSkipped(): bool
     {
-        return (count($this->skipped) > 0) ? true : false;
+        return $this->collectionManager->hasCollection(self::SKIPPED_COMMAND);
     }
 
     /**
      * @return bool
      */
-    public function hasError()
+    public function hasError(): bool
     {
-        return $this->error ? true : false;
+        return $this->collectionManager->hasCollection(self::ERROR_COMMAND);
     }
 
     /**
-     * @return bool
+     * Show skipped messages
      */
-    public function getSkippedMessages()
+    public function showSkippedMessages(): void
     {
-        if (!$this->hasSkipped()) {
-            return false;
-        }
-
-        foreach ($this->skipped as $command) {
-            $this->info($command, 'Skipped');
-        }
-
-        return true;
+        $this->collectionManager->showMessages(self::SKIPPED_COMMAND);
     }
 
     /**
-     * @return string
+     * Show error messages
      */
-    public function getErrorMessage()
+    public function showErrorMessages(): void
     {
-        if (!$this->hasError()) {
-            return false;
-        }
-
-        $this->info($this->error, 'Error');
-
-        return true;
+        $this->collectionManager->showMessages(self::ERROR_COMMAND);
     }
 
-    protected function iterateCommands(Command $command, $callback = null)
-    {
-        $that = $this;
-
-        $this->info($command, 'Executing');
-
-        $p = $this->createProcess($command->getCommand());
-        $p->setTimeout($command->getTimeout());
-        $p->setPty(true);
-        $p->run(function ($type, $data) use ($that, $callback, $p, $command) {
-            $that->output->write($data, false, OutputInterface::OUTPUT_RAW);
-
-            if ($callback !== null) {
-                call_user_func_array($callback, array($p, $command));
-            }
-        });
-
-        if (!$p->isSuccessful()) {
-            if ($command->isRequired()) {
-                $this->error = $command;
-
-                return false;
-            } else {
-                $this->skipped[] = $command;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * @param Command $command
-     * @param string  $info
-     */
-    protected function info($command, $info)
-    {
-        $this->output->writeln(sprintf('<info>%s:</info> %s', $info, $command->getCommand()));
-    }
 
     /**
      * @param string         $command
@@ -321,18 +299,18 @@ class CommandHandler
      *
      * @return Command
      */
-    protected function createCommand($command, $required = true, $timeout = null)
+    protected function createCommand($command, $required = true, $timeout = null): Command
     {
         return new Command($command, $required, $timeout);
     }
 
     /**
-     * @param string $commandString
+     * @param CommandCollection $skippedCommandCollection
      *
-     * @return Process
+     * @return CommandExecutor
      */
-    protected function createProcess($commandString)
+    protected function createExecutor(CommandCollection $skippedCommandCollection): CommandExecutor
     {
-        return new Process($commandString, null, null, fopen('php://stdin', 'r'));
+        return $this->executorFactory->create($skippedCommandCollection);
     }
 }
