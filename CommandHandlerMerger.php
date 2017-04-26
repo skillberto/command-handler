@@ -27,10 +27,14 @@ class CommandHandlerMerger
      */
     public static function merge(CommandHandler $commandHandler_1, CommandHandler $commandHandler_2, int $mergePrefix = self::MERGE_NON, int $mergeTimeout = self::MERGE_NON)
     {
+        if ($commandHandler_2->getCommandsCollection()->count() == 0) {
+            return;
+        }
+
         /**
          * @var Command $command
          */
-        foreach ($commandHandler_2->getCommands() as $command) {
+        foreach ($commandHandler_2->getCommandsCollection() as $command) {
             $internalPrefix = ($mergePrefix == self::MERGE_ALL || ($mergePrefix == self::MERGE_NOT_DEFINED && $commandHandler_2->getPrefix() == '')) ? $commandHandler_1->getPrefix() : '';
             $internalTimeout = ($mergeTimeout == self::MERGE_ALL || ($mergeTimeout == self::MERGE_NOT_DEFINED && $command->getTimeout() === null)) ? $commandHandler_1->getTimeout() : $command->getTimeout();
 
