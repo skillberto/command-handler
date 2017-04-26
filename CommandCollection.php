@@ -37,6 +37,8 @@ class CommandCollection implements IteratorAggregate, Countable
     public function __construct(string $type = '')
     {
         $this->type = $type;
+
+        $this->reset();
     }
 
     /**
@@ -67,8 +69,19 @@ class CommandCollection implements IteratorAggregate, Countable
         return $this->type;
     }
 
-    public function count()
+    /**
+     * @return int
+     */
+    public function count(): int
     {
         return $this->count;
+    }
+
+    /**
+     *
+     */
+    public function reset(): void
+    {
+        $this->commands = [];
     }
 }

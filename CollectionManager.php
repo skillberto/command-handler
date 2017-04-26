@@ -9,7 +9,6 @@
 namespace Skillberto\CommandHandler;
 
 use Skillberto\CommandHandler\Factory\CommandCollectionFactory;
-use Symfony\Component\Console\Output\OutputInterface;
 
 class CollectionManager
 {
@@ -24,20 +23,13 @@ class CollectionManager
     protected $collectionFactory;
 
     /**
-     * @var OutputInterface
-     */
-    protected $output;
-
-    /**
      * CollectionManager constructor.
      *
      * @param CommandCollectionFactory $collectionFactory
-     * @param OutputInterface $output
      */
-    public function __construct(CommandCollectionFactory $collectionFactory, OutputInterface $output)
+    public function __construct(CommandCollectionFactory $collectionFactory)
     {
         $this->collectionFactory = $collectionFactory;
-        $this->output = $output;
     }
 
     /**
@@ -47,7 +39,7 @@ class CollectionManager
      */
     public function getCollection(string $type): CommandCollection
     {
-        if (! array_key_exists($type, $this->collections)) {
+        if (! $this->hasCollection($type)) {
             $skippedCommandCollection = $this->collectionFactory->create($type);
 
             $this->collections[$type] = $skippedCommandCollection;
@@ -66,30 +58,5 @@ class CollectionManager
     public function hasCollection(string $type): bool
     {
         return array_key_exists($type, $this->collections);
-    }
-
-    /**
-     * Show messages by type, if collection exists
-     *
-     * @param string $type
-     */
-    public function showMessages(string $type): void
-    {
-        if (! $this->hasCollection($type)) {
-            return;
-        }
-
-        foreach ($this->getCollection($type) as $command) {
-            $this->info($command, strtoupper($type));
-        }
-    }
-
-    /**
-     * @param Command $command
-     * @param string  $info
-     */
-    protected function info(Command $command, string  $info): void
-    {
-        $this->output->writeln(sprintf('<info>%s:</info> %s', $info, $command->getCommand()));
     }
 }

@@ -10,17 +10,13 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class CommandHandler
 {
-    const MERGE_NON = 0;
-
-    const MERGE_NOT_DEFINED = 1;
-
-    const MERGE_ALL = 2;
-
     const ALL_COMMAND = 'all';
 
     const SKIPPED_COMMAND = 'skipped';
 
     const ERROR_COMMAND = 'error';
+
+    const CACHED_COMMAND = 'cached';
 
     /**
      * @var CollectionManager
@@ -48,6 +44,16 @@ class CommandHandler
     protected $executorFactory;
 
     /**
+     * @var CommandMessageHandler
+     */
+    protected $messageHandler;
+
+    /**
+     * @var CommandCacheManager
+     */
+    protected $cacheManager;
+
+    /**
      * @param OutputInterface $outputInterface
      * @param string          $prefix
      * @param int|float|null  $timeout         The timeout in seconds
@@ -58,7 +64,9 @@ class CommandHandler
         $this->prefix = $prefix;
         $this->timeout = $timeout;
         $this->executorFactory = new CommandExecutorFactory($this->output);
-        $this->collectionManager = new CollectionManager(new CommandCollectionFactory(), $this->output);
+        $this->collectionManager = new CollectionManager(new CommandCollectionFactory());
+        $this->messageHandler = new CommandMessageHandler($this->output, $this->collectionManager);
+        $this->cacheManager = new CommandCacheManager($this->collectionManager, self::ALL_COMMAND, self::CACHED_COMMAND);
     }
 
     /**
@@ -146,9 +154,9 @@ class CommandHandler
     /**
      * @return CommandCollection
      */
-    public function getCommands(): CommandCollection
+    public function getCommandsCollection(): CommandCollection
     {
-        return $this->collectionManager->getCollection(self::ALL_COMMAND);
+        return $this->cacheManager->getCommandsCollection();
     }
 
     /**
@@ -218,21 +226,11 @@ class CommandHandler
      * @param int            $prefix  MERGE_ALL | MERGE_NOT_DEFINED | MERGE_NON
      * @param int            $timeout MERGE_ALL | MERGE_NOT_DEFINED | MERGE_NON
      *
-     * @return $this
+     * @return CommandHandler
      */
-    public function addHandler(CommandHandler $handler, $mergePrefix = self::MERGE_NON, $mergeTimeout = self::MERGE_NON)
+    public function addHandler(CommandHandler $handler, $mergePrefix = CommandHandlerMerger::MERGE_NON, $mergeTimeout = CommandHandlerMerger::MERGE_NON): CommandHandler
     {
-        foreach ($handler->getCommands() as $command) {
-            $internalPrefix = ($mergePrefix == self::MERGE_ALL || ($mergePrefix == self::MERGE_NOT_DEFINED && $handler->getPrefix() == '')) ? $this->getPrefix() : '';
-            $internalTimeout = ($mergeTimeout == self::MERGE_ALL || ($mergeTimeout == self::MERGE_NOT_DEFINED && $command->getTimeout() === null)) ? $this->getTimeout() : $command->getTimeout();
-
-            $data = $internalPrefix.$command->getCommand();
-
-            $command->setCommand($data);
-            $command->setTimeout($internalTimeout);
-
-            $this->collectionManager->getCollection(self::ALL_COMMAND)->add($command);
-        }
+        CommandHandlerMerger::merge($this, $handler, $mergePrefix, $mergeTimeout);
 
         return $this;
     }
@@ -242,18 +240,28 @@ class CommandHandler
      *
      * @return CommandHandler
      */
-    public function execute(Closure $callback = null): CommandHandler
+    public function execute(Closure $callback = null, bool $cache = true): CommandHandler
     {
         $skippedCollection = $this->collectionManager->getCollection(self::SKIPPED_COMMAND);
 
+        if (! $cache) {
+            $this->cacheManager->resetCache();
+        } else {
+            $this->messageHandler->showMessages(self::CACHED_COMMAND);
+        }
+
+        $executableCollection = $this->cacheManager->getExecutableCollection();
+
         $executor = $this->createExecutor($skippedCollection);
 
-        foreach ($this->getCommands() as $command) {
+        foreach ($executableCollection as $command) {
             if (! $executor->execute($command, $callback)) {
                 $this->collectionManager->getCollection(self::ERROR_COMMAND)->add($command);
 
                 return $this;
             }
+
+            $this->cacheManager->cache($command);
         }
 
         return $this;
@@ -264,7 +272,7 @@ class CommandHandler
      */
     public function hasSkipped(): bool
     {
-        return $this->collectionManager->hasCollection(self::SKIPPED_COMMAND);
+        return $this->messageHandler->hasCommandInCollection(self::SKIPPED_COMMAND);
     }
 
     /**
@@ -272,7 +280,7 @@ class CommandHandler
      */
     public function hasError(): bool
     {
-        return $this->collectionManager->hasCollection(self::ERROR_COMMAND);
+        return $this->messageHandler->hasCommandInCollection(self::ERROR_COMMAND);
     }
 
     /**
@@ -280,7 +288,7 @@ class CommandHandler
      */
     public function showSkippedMessages(): void
     {
-        $this->collectionManager->showMessages(self::SKIPPED_COMMAND);
+        $this->messageHandler->showMessages(self::SKIPPED_COMMAND);
     }
 
     /**
@@ -288,18 +296,18 @@ class CommandHandler
      */
     public function showErrorMessages(): void
     {
-        $this->collectionManager->showMessages(self::ERROR_COMMAND);
+        $this->messageHandler->showMessages(self::ERROR_COMMAND);
     }
 
 
     /**
-     * @param string         $command
-     * @param bool           $required
-     * @param int|float|null $timeout  The timeout in seconds
+     * @param string    $command
+     * @param bool      $required
+     * @param int       $timeout  The timeout in seconds
      *
      * @return Command
      */
-    protected function createCommand($command, $required = true, $timeout = null): Command
+    protected function createCommand(string $command, bool $required = true, int $timeout = null): Command
     {
         return new Command($command, $required, $timeout);
     }
